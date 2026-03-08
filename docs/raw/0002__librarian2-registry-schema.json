@@ -1,0 +1,422 @@
+{
+  "document": {
+    "document-id": "librarian2.registry-schema.v1",
+    "title": "Librarian2 Resource Registry Schema",
+    "version": "1",
+    "purpose": "Define the schema and design principles for Librarian2 resource registries, which allow LLMs and humans to discover resources on a developer's system.",
+    "status": "working-draft",
+    "author": "Lion + ChatGPT",
+    "date": "2026-03-08"
+  },
+  "overview": {
+    "description": "Librarian2 is a desktop-scale resource registry designed to help both humans and LLM-based tools locate useful resources on a developer's system. A registry is a JSON file that contains entries describing files, folders, programs, URLs, and other resources.",
+    "primary_goal": "Allow LLMs and humans to quickly locate important artifacts such as specifications, repositories, tools, and datasets.",
+    "design_philosophy": [
+      "Registries primarily point to resources rather than containing them. Inline resources are supported but expected to be rare.",
+      "The system remains flat and simple rather than becoming a knowledge graph.",
+      "Most fields are optional and extensible.",
+      "Consumers interpret metadata rather than the registry imposing behavior.",
+      "Forward compatibility is prioritized."
+    ]
+  },
+  "summary": {
+    "description": "Librarian2 registries act as structured directories of resources. They help both humans and LLMs discover important artifacts such as documentation, tools, repositories, and datasets within a developer environment. The design prioritizes simplicity, extensibility, and compatibility with both human editing and automated tooling."
+  },
+  "intended_scope": {
+    "scale": "desktop computer / developer workstation",
+    "typical_use_cases": [
+      "Helping LLM coding agents discover project documentation",
+      "Locating specifications or schemas in a large codebase",
+      "Identifying important folders or repositories",
+      "Discovering tools or scripts available in a workspace",
+      "Cataloging resources across multiple projects"
+    ],
+    "non_goals": [
+      "Not a knowledge graph",
+      "Not a concept map",
+      "Not a database of documents",
+      "Not a system for executing programs"
+    ]
+  },
+  "registry_file_structure": {
+    "description": "A registry file is a JSON document containing metadata about the document itself and a flat dictionary of resource entries.",
+    "example": {
+      "document": {
+        "document-id": "example.registry",
+        "title": "Example Registry",
+        "purpose": "Demonstration registry."
+      },
+      "registry": {
+        "<resource-id>": {}
+      }
+    }
+  },
+  "resource_entry_schema": {
+    "description": "Each resource entry describes a discoverable artifact. Entries are keyed by their ID in the registry dictionary and also contain their ID within the entry itself.",
+    "notes": [
+      "Resource entries may include additional fields not described in this schema.",
+      "Consumers should ignore fields they do not recognize."
+    ],
+    "fields": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "pattern": "^[a-zA-Z0-9_.-]+$",
+        "description": "Identifier for the resource. Must match the dictionary key used in the registry. Identifiers may contain letters, digits, underscore, period, and hyphen.",
+        "notes": [
+          "The identifier inside the entry must match the dictionary key.",
+          "Identifiers beginning with a single quote (e.g. '0, '1) represent positional convenience entries and are not stable identifiers.",
+          "Stable anonymous identifiers may use UUID v4 strings."
+        ]
+      },
+      "title": {
+        "type": "string",
+        "required": false,
+        "description": "Human-readable name for the resource."
+      },
+      "purpose": {
+        "type": "string",
+        "required": true,
+        "description": "Explanation of what the resource is for. This field is critical for helping LLMs decide when to consult the resource.\nThe purpose is ideally 1-3 sentences long, because LLMs perform much better when the field isn't extremely short or extremely long."
+      },
+      "location": {
+        "type": "array",
+        "required": false,
+        "items": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "description": "List of objects describing ways the resource may be accessed.",
+        "example": [
+          {
+            "path": "./docs/spec/router.json"
+          }
+        ],
+        "notes": [
+          "The structure of this field is described in the location system section.",
+          "Each object represents one possible location or access method.",
+          "Consumers interpret the keys inside location objects.",
+          "Common keys include path, url, inline, and protocol-specific descriptors."
+        ]
+      },
+      "tags": {
+        "type": "array",
+        "required": false,
+        "items": {
+          "type": "string"
+        },
+        "description": "Optional list of keywords that may help discovery."
+      },
+      "description": {
+        "type": "string",
+        "required": false,
+        "description": "Optional longer explanation of the resource."
+      },
+      "type": {
+        "type": "object",
+        "required": false,
+        "description": "Structured description of the resource's logical and semantic type.",
+        "notes": [
+          "The structure of this field is described in the type system section.",
+          "Tools should tolerate missing or partially specified types."
+        ]
+      },
+      "invoke": {
+        "type": "object",
+        "required": false,
+        "description": "Reserved for future execution metadata describing how to run the resource.",
+        "notes": [
+          "This field is intentionally unspecified in the initial schema.",
+          "Future versions may define structured invocation instructions."
+        ]
+      }
+    }
+  },
+  "id_conventions": {
+    "description": "Three categories of identifiers exist.",
+    "types": {
+      "positional_ids": {
+        "format": "'0, '1, '2, ...",
+        "meaning": "Convenience entries with no stable identity.",
+        "rules": [
+          "May be renumbered freely",
+          "Should not be referenced by other entries"
+        ]
+      },
+      "named_ids": {
+        "format": "descriptive strings",
+        "meaning": "Stable identifiers chosen by humans."
+      },
+      "guid_ids": {
+        "format": "UUID v4",
+        "meaning": "Stable anonymous identifiers."
+      }
+    }
+  },
+  "type_system": {
+    "description": "The type field describes both the physical nature of a resource and the semantic role it plays. The field is optional, but when present it helps tools and LLMs interpret the resource more effectively.",
+    "structure": {
+      "type": "object",
+      "fields": {
+        "logical": "object",
+        "semantic": "object"
+      },
+      "notes": [
+        "Both logical and semantic components are optional.",
+        "Tools should gracefully degrade in the presence of missing or partial type information."
+      ]
+    },
+    "logical": {
+      "description": "The logical type describes what the resource physically is or how it is accessed.",
+      "schema": {
+        "type": "object",
+        "required": [
+          "base"
+        ],
+        "fields": {
+          "base": "string",
+          "format": "string",
+          "encoding": "string",
+          "runtime": "string",
+          "protocol": "string"
+        },
+        "additionalProperties": true
+      },
+      "base_values": [
+        "file",
+        "folder",
+        "program",
+        "url"
+      ],
+      "notes": [
+        "The base field identifies the fundamental category of the resource.",
+        "Additional fields refine the logical type but are optional.",
+        "Consumers should ignore unknown fields.",
+        "Consumers should primarily rely on logical.base when determining how to handle a resource."
+      ],
+      "examples": [
+        {
+          "logical": {
+            "base": "file",
+            "format": "json",
+            "encoding": "utf-8"
+          }
+        },
+        {
+          "logical": {
+            "base": "file",
+            "format": "txt",
+            "encoding": "utf-8"
+          }
+        },
+        {
+          "logical": {
+            "base": "file",
+            "format": "lsf",
+            "encoding": "utf-8"
+          }
+        },
+        {
+          "logical": {
+            "base": "program",
+            "runtime": "python"
+          }
+        },
+        {
+          "logical": {
+            "base": "url",
+            "protocol": "https"
+          }
+        }
+      ]
+    },
+    "semantic": {
+      "description": "The semantic type describes the role or meaning of the resource within a project or ecosystem.",
+      "schema": {
+        "type": "object",
+        "required": [
+          "base"
+        ],
+        "fields": {
+          "base": "string",
+          "system": "string",
+          "role": "string"
+        },
+        "additionalProperties": true
+      },
+      "notes": [
+        "Semantic types are intentionally open-ended.",
+        "Projects may introduce their own semantic vocabulary.",
+        "Consumers should ignore semantic values they do not recognize."
+      ],
+      "examples": [
+        {
+          "semantic": {
+            "base": "spec"
+          }
+        },
+        {
+          "semantic": {
+            "base": "schema"
+          }
+        },
+        {
+          "semantic": {
+            "base": "tool"
+          }
+        },
+        {
+          "semantic": {
+            "base": "git-repo"
+          }
+        },
+        {
+          "semantic": {
+            "base": "patchboard-inbox",
+            "system": "patchboard"
+          }
+        }
+      ]
+    },
+    "example_combined_type": {
+      "description": "Example resource type using both logical and semantic components.",
+      "example": {
+        "type": {
+          "logical": {
+            "base": "file",
+            "format": "json"
+          },
+          "semantic": {
+            "base": "spec"
+          }
+        }
+      }
+    }
+  },
+  "location_system": {
+    "description": "The location field describes ways a resource may be accessed or obtained. A resource may have zero, one, or multiple locations. Each location is represented as an object inside a list. Each object describes one access method or source for the resource.",
+    "schema": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "principles": [
+      "A resource may have multiple locations.",
+      "Each location object represents one possible access method.",
+      "Location descriptors are intentionally open-ended.",
+      "Consumers interpret location descriptors according to their own capabilities.",
+      "Unknown location keys should be ignored rather than treated as errors."
+    ],
+    "common_descriptors": {
+      "path": {
+        "key": "path",
+        "value_type": "string",
+        "description": "Filesystem path to the resource.",
+        "notes": [
+          "Paths may be absolute or relative.",
+          "Relative paths are interpreted relative to the registry file containing the entry."
+        ]
+      },
+      "url": {
+        "key": "url",
+        "value_type": "string",
+        "description": "HTTP or HTTPS URL pointing to the resource."
+      },
+      "inline": {
+        "key": "inline",
+        "value_type": "string",
+        "description": "Inline content embedded directly within the registry.",
+        "notes": [
+          "Inline resources should generally be small text artifacts.",
+          "Logical type metadata should still describe the nature of the resource (for example file/txt).",
+          "Consumers may treat inline resources as read-only content."
+        ]
+      }
+    },
+    "protocol_examples": [
+      {
+        "telnet": "foo.example.com",
+        "port": 90
+      },
+      {
+        "ssh": "build.example.com",
+        "path": "/data/output"
+      }
+    ],
+    "examples": [
+      {
+        "description": "Local filesystem file",
+        "location": [
+          {
+            "path": "./docs/spec/router.json"
+          }
+        ]
+      },
+      {
+        "description": "Remote web resource",
+        "location": [
+          {
+            "url": "https://example.com/spec/router.json"
+          }
+        ]
+      },
+      {
+        "description": "Local and remote mirror",
+        "location": [
+          {
+            "path": "./docs/spec/router.json"
+          },
+          {
+            "url": "https://github.com/example/router.json"
+          }
+        ]
+      },
+      {
+        "description": "Inline text resource",
+        "location": [
+          {
+            "inline": "You are an expert software engineer..."
+          }
+        ]
+      },
+      {
+        "description": "Service endpoint",
+        "location": [
+          {
+            "telnet": "foo.example.com",
+            "port": 90
+          }
+        ]
+      }
+    ],
+    "consumer_behavior": [
+      "Consumers should attempt to interpret location descriptors they recognize.",
+      "If multiple locations are provided, consumers may choose whichever is most appropriate.",
+      "Consumers may ignore locations they do not understand.",
+      "The registry itself does not impose resolution rules."
+    ],
+    "notes": [
+      "The location system intentionally avoids defining a fixed set of protocols or descriptors.",
+      "This allows projects to introduce custom descriptors without modifying the registry schema.",
+      "Because location descriptors are independent objects, additional metadata may be attached to individual locations if desired.",
+      "A resource may have zero locations if the registry entry exists only as documentation or a placeholder."
+    ]
+  },
+  "extensibility": {
+    "principles": [
+      "New semantic types may be introduced freely.",
+      "New location descriptor keys may be introduced.",
+      "Tools should ignore unknown fields rather than failing.",
+      "Registries should remain usable even when partial."
+    ]
+  },
+  "design_principles": [
+    "Keep the registry flat and simple.",
+    "Prioritize discoverability over modeling.",
+    "Allow tools to interpret metadata flexibly.",
+    "Avoid complex hierarchies or ontologies.",
+    "Favor forward compatibility."
+  ]
+}

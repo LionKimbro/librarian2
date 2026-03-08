@@ -1,0 +1,226 @@
+date: 2026-03-08
+title: Initial Notes for librarian2
+
+
+== Conversation Log at Beginning of Project ==
+date: 2026-03-08
+
+Initial Discussion with Wing-Cat:
+  https://chatgpt.com/c/69ad0ff9-9ff8-832b-aded-523b5446c95c
+
+First Focused Discussion with Wing-Cat:
+  https://chatgpt.com/c/69ad50ea-cb24-8329-a782-12b0e534ad8e
+
+
+== Hand-Off Spec ==
+date: 2026-03-08
+origin: https://chatgpt.com/c/69ad0ff9-9ff8-832b-aded-523b5446c95c
+destination: https://chatgpt.com/c/69ad50ea-cb24-8329-a782-12b0e534ad8e
+
+{
+  "document": {
+    "document-id": "librarian2.resource-registry.design.v1",
+    "title": "Librarian 2 Resource Registry Design",
+    "purpose": "Describe the design of Librarian 2, a resource registry intended for LLM navigation and discovery of resources on Lion's system. This document summarizes the problem, design goals, proposed schemas, examples, and open questions discussed.",
+    "status": "working-design",
+    "author": "Lion + ChatGPT",
+    "date": "2026-03-08"
+  },
+
+  "problem_statement": {
+    "current_limitation": "The existing inventory.json supports only documents with fields like document-id, filepath, title, and purpose.",
+    "new_requirement": "The system should allow LLMs to locate many types of resources, not just documents.",
+    "goal": "Create a registry that allows an LLM to discover and reference useful resources on Lion's system.",
+    "explicit_non_goal": "This system is NOT a knowledge graph, concept map, or topic map. It is strictly a directory/registry of resources."
+  },
+
+  "design_goals": [
+    "Provide a simple directory of resources for LLM use",
+    "Support multiple resource types",
+    "Allow quick discovery by LLMs",
+    "Preserve the important 'purpose' field to help LLMs select resources",
+    "Remain simple and flat (avoid knowledge modeling)",
+    "Allow references to both files and executable capabilities",
+    "Allow references to folders, repositories, tools, scripts, and specifications"
+  ],
+
+  "core_principle": {
+    "description": "The registry should function like a directory or catalog for LLMs. Each entry represents a resource that the LLM can reference or instruct the user to access."
+  },
+
+  "top_level_schema": {
+    "description": "The registry is a flat collection of resource objects keyed by ID.",
+    "example": {
+      "resources": {
+        "<resource-id>": {
+          "type": "string",
+          "title": "string",
+          "purpose": "string",
+          "location": "string",
+          "tags": ["string"],
+          "notes": "string"
+        }
+      }
+    }
+  },
+
+  "resource_types": [
+    "document",
+    "folder",
+    "repository",
+    "script",
+    "executable",
+    "tool",
+    "dataset",
+    "library",
+    "specification",
+    "command",
+    "service"
+  ],
+
+  "resource_schema": {
+    "description": "Generic schema used for any resource entry.",
+    "schema": {
+      "type": "string",
+      "title": "string",
+      "purpose": "string",
+      "location": "string",
+      "tags": ["string"],
+      "notes": "string"
+    }
+  },
+
+  "execution_extension_schema": {
+    "description": "Optional fields when the resource is executable or invokable.",
+    "schema": {
+      "invoke": {
+        "method": "shell | python | cli | service",
+        "command": "string",
+        "arguments": ["string"],
+        "working_directory": "string"
+      }
+    }
+  },
+
+  "example_registry": {
+    "resources": {
+      "lions_dictionary_for_llms": {
+        "type": "document",
+        "location": "F:/lion/github/lions-documents/docs-for-wing-cat/dictionary.json",
+        "title": "Lion's Dictionary for LLMs",
+        "purpose": "Provide a dictionary of concepts and terminology used across Lion's systems"
+      },
+
+      "lions_philosophy_of_programming": {
+        "type": "document",
+        "location": "F:/lion/github/lions-documents/coding-guidelines/lions-philosophy-of-programming.json",
+        "title": "Lion's Philosophy of Programming",
+        "purpose": "Explain Lion's preferred programming style and design philosophy"
+      },
+
+      "filetalk_repository": {
+        "type": "repository",
+        "location": "F:/lion/github/filetalk",
+        "title": "FileTalk",
+        "purpose": "Filesystem-based IPC system used for message passing between programs"
+      },
+
+      "patchboard_router_spec": {
+        "type": "specification",
+        "location": "F:/lion/github/filetalk/docs/spec/patchboard-router.v0.1.json",
+        "title": "Patchboard Router Specification",
+        "purpose": "Define the architecture and behavior of the Patchboard router"
+      },
+
+      "tkintertester_repository": {
+        "type": "repository",
+        "location": "F:/lion/github/tkintertester",
+        "title": "tkintertester",
+        "purpose": "Minimal test harness for Tkinter GUI programs"
+      },
+
+      "lion_documents_folder": {
+        "type": "folder",
+        "location": "F:/lion/github/lions-documents",
+        "title": "Lion Documents",
+        "purpose": "Main corpus of Lion's documentation and design materials"
+      },
+
+      "jsonedit_tool": {
+        "type": "tool",
+        "location": "F:/lion/github/jsoneditor",
+        "title": "jsonedit",
+        "purpose": "Utility for editing and manipulating JSON files"
+      },
+
+      "project_docs_projection_script": {
+        "type": "script",
+        "location": "F:/lion/github/command-deck-engineering/project-docs.py",
+        "title": "Project Docs Projection Script",
+        "purpose": "Copies or projects documentation from docs/raw into the published docs directory",
+        "invoke": {
+          "method": "python",
+          "command": "python project-docs.py",
+          "working_directory": "F:/lion/github/command-deck-engineering"
+        }
+      },
+
+      "patchboard_router": {
+        "type": "executable",
+        "location": "F:/lion/github/filetalk/router",
+        "title": "Patchboard Router",
+        "purpose": "Runs the Patchboard message routing system",
+        "invoke": {
+          "method": "shell",
+          "command": "python router.py"
+        }
+      },
+
+      "lionscliapp_library": {
+        "type": "library",
+        "location": "F:/lion/github/lionscliapp",
+        "title": "lionscliapp",
+        "purpose": "Framework for building CLI tools with persistent configuration"
+      }
+    }
+  },
+
+  "key_fields_explained": {
+    "type": "Defines what kind of resource the entry represents.",
+    "location": "Filesystem path, URL, or other reference.",
+    "purpose": "Critical explanatory field used by LLMs to determine when to consult this resource.",
+    "tags": "Optional keywords that may help discovery.",
+    "invoke": "Optional instructions for running or activating the resource."
+  },
+
+  "design_notes": [
+    "Keep the registry flat and simple.",
+    "Use metadata fields instead of nested structures.",
+    "Ensure every resource has a clear 'purpose'.",
+    "Allow resources to reference files, directories, repositories, or commands.",
+    "Make it easy for LLMs to scan and choose resources."
+  ],
+
+  "potential_resource_categories": [
+    "documentation",
+    "code repositories",
+    "tools",
+    "libraries",
+    "scripts",
+    "executables",
+    "data sets",
+    "specifications",
+    "services"
+  ],
+
+  "future_extensions": [
+    "Optional tagging system",
+    "Search helpers for LLMs",
+    "Automatic generation of resource registry from filesystem scanning",
+    "Multiple registry files merged together"
+  ],
+
+  "summary": {
+    "description": "Librarian 2 is a resource registry for LLMs. It acts as a directory pointing to useful resources on Lion's system, including documents, repositories, tools, and executable capabilities. It is intentionally simple and avoids knowledge graph modeling."
+  }
+}
