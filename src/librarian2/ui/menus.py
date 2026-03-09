@@ -128,6 +128,7 @@ def cmd_add_entry(base_type):
         if not path:
             return
         entry = _build_file_entry(pathlib.Path(path))
+        _enrich_from_document(entry)
 
     elif base_type == 'folder':
         path = fd.askdirectory(title='Add Folder')
@@ -265,7 +266,7 @@ def _update_doc_menu_states(m):
     m.entryconfigure('Write to "document" key',  state=state)
 
 
-_DOC_FIELDS = ('id', 'title', 'tags', 'type', 'description', 'purpose')
+_DOC_FIELDS = ('title', 'tags', 'type', 'description', 'purpose')
 
 
 def _get_entry_path(entry):
@@ -274,6 +275,32 @@ def _get_entry_path(entry):
         if 'path' in loc:
             return loc['path']
     return None
+
+
+def _enrich_from_document(entry):
+    """Best-effort: read 'document' key from the entry's JSON file and update entry in-place.
+
+    Called before ADD_ENTRY so no rename dispatch is needed — the id is set
+    correctly from the start. Silent on any error or missing document key.
+    """
+    path_str = _get_entry_path(entry)
+    if not path_str:
+        return
+    try:
+        data = json.loads(pathlib.Path(path_str).read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError):
+        return
+    if not isinstance(data, dict):
+        return
+    doc = data.get('document')
+    if not isinstance(doc, dict):
+        return
+    for field in _DOC_FIELDS:
+        if field in doc:
+            entry[field] = doc[field]
+    doc_id = doc.get('document-id')
+    if doc_id:
+        entry['id'] = _unique_id(doc_id)
 
 
 def cmd_read_from_document():
@@ -305,10 +332,10 @@ def cmd_read_from_document():
         return
 
     for field in _DOC_FIELDS:
-        if field in doc and field != 'id':
+        if field in doc:
             entry[field] = doc[field]
 
-    new_id = doc.get('id')
+    new_id = doc.get('document-id')
     if new_id and new_id != entry_id:
         d.dispatch(d.RENAME_ENTRY, {'old_id': entry_id, 'new_id': new_id, 'entry': entry})
     else:
@@ -342,7 +369,8 @@ def cmd_write_to_document():
         d.dispatch(d.SET_STATUS, {'msg': 'File root is not a JSON object', 'level': 'red'})
         return
 
-    doc_obj  = {f: entry[f] for f in _DOC_FIELDS if f in entry}
+    doc_obj  = {'document-id': entry['id']} if 'id' in entry else {}
+    doc_obj.update({f: entry[f] for f in _DOC_FIELDS if f in entry})
     new_data = {'document': doc_obj}
     for k, v in data.items():
         if k != 'document':
