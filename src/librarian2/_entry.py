@@ -2,7 +2,7 @@ import lionscliapp as app
 
 
 def main():
-    app.declare_app('librarian2', '0.1')
+    app.declare_app('librarian', '0.1')
     app.describe_app('Graphical editor for Librarian2 resource registries')
     app.declare_projectdir('.librarian2')
 
@@ -12,7 +12,7 @@ def main():
     app.declare_key('path.scripts', '')
     app.describe_key('path.scripts', 'Directory containing user-defined record scripts')
 
-    app.declare_key('patchboard.title', 'Librarian2 Registry Editor')
+    app.declare_key('patchboard.title', "Lion's Librarian - Registry Editor")
     app.describe_key('patchboard.title', 'Component title announced to Patchboard Atlas in the component ID card')
 
     app.declare_key('patchboard.pollinginterval', '500')

@@ -25,7 +25,7 @@ def run_editor():
     d._setup()
 
     root = tk.Tk()
-    root.title('Librarian2 Registry Editor')
+    root.title("Lion's Librarian - Registry Editor")
     root.geometry('800x600')
     root.withdraw()                  # hide until layout is complete
     root.option_add('*tearOff', False)
@@ -119,11 +119,22 @@ def refresh_all(g):
     """
     focused_key = _focused_widget_key(g)
 
+    refresh_title(g)
     refresh_index(g)
     refresh_editor(g)
     refresh_status_bar(g)
 
     _restore_focus(g, focused_key)
+
+
+def refresh_title(g):
+    """Set the window title to reflect the currently open registry path."""
+    reg_path = g.get(st.REG_PATH)
+    if reg_path:
+        title = f"Lion's Librarian - {reg_path}"
+    else:
+        title = "Lion's Librarian - Registry Editor"
+    g[st.TK].title(title)
 
 
 def _focused_widget_key(g):

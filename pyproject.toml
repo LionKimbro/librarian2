@@ -1,5 +1,5 @@
 [project]
-name = "librarian2"
+name = "lions-librarian"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
@@ -14,4 +14,4 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [project.scripts]
-librarian2 = "librarian2._entry:main"
+librarian = "librarian2._entry:main"
