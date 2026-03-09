@@ -172,35 +172,63 @@ def _save():
 # Window geometry persistence  (.librarian2/window.json)
 # ---------------------------------------------------------------------------
 
-_geometry_save_id = None   # after() handle for debouncing Configure events
+_geometry_save_id   = None   # after() handle for debouncing Configure events
+_last_known_sash    = None   # last valid sash value; fallback when paned reports 0
+_geometry_ready     = False  # blocks saves until startup is complete
 
 
 def load_window_geometry(root):
     """Read window.json and apply saved width, height, and sash position."""
+    global _last_known_sash
     try:
+        path = app.get_path('window.json', 'p')
         data = app.read_json('window.json', 'p')
+        print(f'[window.json] READ   sash={data.get("sash")}  ← {path}')
     except FileNotFoundError:
+        print('[window.json] READ   not found — using defaults')
+        _geometry_ready = True
         return
     w = int(data.get('width',  800))
     h = int(data.get('height', 600))
     root.geometry(f'{w}x{h}')
     sash = data.get('sash')
     if sash is not None:
+        _last_known_sash = int(sash)
         paned = st.g[st.WIDGETS].get('paned')
         if paned:
-            # Defer until after the window is fully laid out
-            root.after(100, lambda: paned.sashpos(0, int(sash)))
+            # Apply sash via paned's own <Configure>, which fires once it has
+            # a real allocated width — the only reliable trigger on all platforms.
+            _target = int(sash)
+            def _on_paned_ready(event, _t=_target):
+                global _geometry_ready
+                if event.width > 0:
+                    paned.unbind('<Configure>')
+                    paned.sashpos(0, _t)
+                    print(f'[window.json] APPLY  sashpos(0, {_t}) → actual={paned.sashpos(0)}')
+                    _geometry_ready = True
+            paned.bind('<Configure>', _on_paned_ready)
+    else:
+        _geometry_ready = True
 
 
 def save_window_geometry(root):
     """Write current width, height, and sash position to window.json."""
-    paned = st.g[st.WIDGETS].get('paned')
-    data  = {
+    global _last_known_sash
+    if not _geometry_ready:
+        return
+    paned    = st.g[st.WIDGETS].get('paned')
+    raw_sash = paned.sashpos(0) if paned else 0
+    if raw_sash > 0:
+        _last_known_sash = raw_sash
+    sash = _last_known_sash or 0
+    data = {
         'width':  root.winfo_width(),
         'height': root.winfo_height(),
-        'sash':   paned.sashpos(0) if paned else 0,
+        'sash':   sash,
     }
     try:
+        path = app.get_path('window.json', 'p')
+        print(f'[window.json] WRITE  sash={sash} (raw={raw_sash})  → {path}')
         app.write_json('window.json', data, 'p2')
     except Exception:
         pass

@@ -19,12 +19,12 @@ def build_status_bar(parent, widgets):
 
     dirty_dot = tk.Label(frame, text='\u25cf', font=theme.FONT_UI,
                          bg=theme.DARK_BG2, fg=theme.DIRTY_GREEN)
-    dirty_dot.pack(side='left', padx=(8, 2))
+    dirty_dot.pack(side='right', padx=(2, 8))
 
     status_label = tk.Label(frame, text='', font=theme.FONT_UI,
                              bg=theme.DARK_BG2, fg=theme.DARK_FG,
                              anchor='w')
-    status_label.pack(side='left', fill='x', expand=True, padx=4)
+    status_label.pack(side='left', fill='x', expand=True, padx=(8, 4))
 
     widgets['status_bar']   = frame
     widgets['dirty_dot']    = dirty_dot
