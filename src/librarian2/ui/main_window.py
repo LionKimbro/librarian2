@@ -26,6 +26,7 @@ def run_editor():
 
     root = tk.Tk()
     root.title('Librarian2 Registry Editor')
+    root.geometry('800x600')
     root.withdraw()                  # hide until layout is complete
     root.option_add('*tearOff', False)
 
@@ -35,6 +36,10 @@ def run_editor():
     theme.apply_theme(root)
     build_main_window(root)
     bind_keys(root)
+
+    from librarian2 import patchboard
+    patchboard.announce_self()
+    patchboard.start_input_polling(root)
 
     registry_path = app.ctx.get('path.registry')
     if not (registry_path and registry_path.is_file()):
@@ -55,29 +60,29 @@ def build_main_window(root):
     """Construct the two-pane layout inside root.
 
     Left pane: entry index.   Right pane: entry editor.
-    Status bar pinned at the bottom.
+    A draggable sash separates the two; status bar is pinned at the bottom.
     """
     widgets = st.g[st.WIDGETS]
 
-    root.columnconfigure(0, weight=0, minsize=270)
-    root.columnconfigure(1, weight=0)     # separator
-    root.columnconfigure(2, weight=1)
+    root.columnconfigure(0, weight=1)
     root.rowconfigure(0, weight=1)
     root.rowconfigure(1, weight=0)
 
     build_menu_bar(root, widgets)
 
-    index_pane  = build_index_pane(root, widgets)
-    separator   = ttk.Separator(root, orient='vertical')
-    editor_pane = build_editor_pane(root, widgets)
+    paned = ttk.PanedWindow(root, orient='horizontal')
+
+    index_pane  = build_index_pane(paned, widgets)
+    editor_pane = build_editor_pane(paned, widgets)
     status_bar  = build_status_bar(root, widgets)
 
-    index_pane.grid(row=0, column=0, sticky='nsew')
-    separator.grid(  row=0, column=1, sticky='ns', padx=1)
-    editor_pane.grid(row=0, column=2, sticky='nsew')
-    status_bar.grid( row=1, column=0, columnspan=3, sticky='ew')
+    paned.add(index_pane,  weight=0)
+    paned.add(editor_pane, weight=1)
 
-    widgets['separator'] = separator
+    paned.grid(     row=0, column=0, sticky='nsew')
+    status_bar.grid(row=1, column=0, sticky='ew')
+
+    widgets['paned'] = paned
 
 
 def bind_keys(root):

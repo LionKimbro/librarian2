@@ -12,6 +12,12 @@ def main():
     app.declare_key('path.scripts', '')
     app.describe_key('path.scripts', 'Directory containing user-defined record scripts')
 
+    app.declare_key('patchboard.title', 'Librarian2 Registry Editor')
+    app.describe_key('patchboard.title', 'Component title announced to Patchboard Atlas in the component ID card')
+
+    app.declare_key('patchboard.pollinginterval', '500')
+    app.describe_key('patchboard.pollinginterval', 'Milliseconds between INBOX polls (integer)')
+
     app.declare_key('json.indent.registry', 2)
     app.describe_key('json.indent.registry', 'Indentation for saved registry files (0=compact, 2=pretty)')
 
