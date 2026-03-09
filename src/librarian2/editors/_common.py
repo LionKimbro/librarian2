@@ -11,7 +11,11 @@ import re
 import subprocess
 import sys
 import tkinter as tk
+import tkinter.ttk as ttk
 from librarian2.ui import theme
+from librarian2 import state as st
+
+NOT_USED = '<NOT-USED>'
 
 _TAG_RE = re.compile(r'^[a-zA-Z0-9_]+$')
 
@@ -150,3 +154,117 @@ def copy_to_clipboard(root, text):
     """Copy text to the system clipboard."""
     root.clipboard_clear()
     root.clipboard_append(text)
+
+
+# ---------------------------------------------------------------------------
+# Type combobox fields  (logical.format, logical.encoding, semantic.base)
+# ---------------------------------------------------------------------------
+
+def _collect_type_values(axis, field):
+    """Return sorted unique values of type[axis][field] across all registry entries."""
+    seen = set()
+    for entry in st.g[st.REG_ENTRIES].values():
+        val = entry.get('type', {}).get(axis, {}).get(field)
+        if val:
+            seen.add(val)
+    return sorted(seen)
+
+
+def _merge_suggestions(base_list, extra):
+    """Append any extra values not already in base_list. Preserves base order."""
+    result  = list(base_list)
+    present = set(base_list)
+    for v in extra:
+        if v not in present:
+            result.append(v)
+            present.add(v)
+    return result
+
+
+def build_type_fields(frame, entry, widgets, row_start,
+                      format_opts=None, encoding_opts=None, semantic_opts=None):
+    """Build comboboxes for logical.format, logical.encoding, and semantic.base.
+
+    All active comboboxes are placed on a single row, packed left with their
+    inline labels. Pass None for any axis to omit it entirely.
+    Scans the registry to include any values already in use as extra suggestions.
+    Stores vars/widgets in the widgets dict.
+    Returns: next available grid row (row_start + 1 if any field is shown, else row_start).
+    """
+    logical  = entry.get('type', {}).get('logical', {})
+    semantic = entry.get('type', {}).get('semantic', {})
+
+    fields = []
+    if format_opts is not None:
+        fields.append(('format:', logical.get('format'), format_opts,
+                        _collect_type_values('logical', 'format'),
+                        'type_format_var', 'type_format_cb'))
+    if encoding_opts is not None:
+        fields.append(('encoding:', logical.get('encoding'), encoding_opts,
+                        _collect_type_values('logical', 'encoding'),
+                        'type_encoding_var', 'type_encoding_cb'))
+    if semantic_opts is not None:
+        fields.append(('semantic:', semantic.get('base'), semantic_opts,
+                        _collect_type_values('semantic', 'base'),
+                        'type_semantic_var', 'type_semantic_cb'))
+
+    if not fields:
+        return row_start
+
+    row_frame = tk.Frame(frame, bg=theme.DARK_BG)
+    row_frame.grid(row=row_start, column=0, columnspan=2, sticky='w', pady=4)
+
+    for label_text, current_val, base_opts, extra_vals, var_key, cb_key in fields:
+        current = current_val or NOT_USED
+        values  = _merge_suggestions(base_opts, extra_vals)
+        if current not in values:
+            values.insert(1, current)
+        var = tk.StringVar(value=current)
+        tk.Label(row_frame, text=label_text, font=theme.FONT_UI,
+                 bg=theme.DARK_BG, fg=theme.DARK_FG_DIM).pack(side='left', padx=(8, 2))
+        cb = ttk.Combobox(row_frame, textvariable=var, values=values,
+                          font=theme.FONT_MONO, width=12)
+        cb.pack(side='left', padx=(0, 4))
+        widgets[var_key] = var
+        widgets[cb_key]  = cb
+
+    return row_start + 1
+
+
+def apply_type_fields(entry, widgets):
+    """Write combobox values for logical.format, logical.encoding, semantic.base into entry.
+
+    <NOT-USED> or blank → removes the key.
+    Cleans up empty logical / semantic / type dicts after writing so no
+    spurious empty objects are left in the record.
+    """
+    # Get or create the sub-dicts; we clean up empties at the end
+    type_d   = entry.setdefault('type', {})
+    logical  = type_d.setdefault('logical', {})
+    semantic = type_d.setdefault('semantic', {})
+
+    for field, wkey in [('format', 'type_format_var'), ('encoding', 'type_encoding_var')]:
+        var = widgets.get(wkey)
+        if var is None:
+            continue
+        val = var.get().strip()
+        if val and val != NOT_USED:
+            logical[field] = val
+        else:
+            logical.pop(field, None)
+
+    var = widgets.get('type_semantic_var')
+    if var is not None:
+        val = var.get().strip()
+        if val and val != NOT_USED:
+            semantic['base'] = val
+        else:
+            semantic.pop('base', None)
+
+    # Clean up empty containers (but never touch keys we don't manage, like logical.base)
+    if not logical:
+        type_d.pop('logical', None)
+    if not semantic:
+        type_d.pop('semantic', None)
+    if not type_d:
+        entry.pop('type', None)

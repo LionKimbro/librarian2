@@ -66,6 +66,17 @@ def apply_theme(root):
                     arrowcolor=DARK_FG_DIM)
     style.configure('TSeparator',  background=DARK_BORDER)
 
+    style.configure('TCombobox',
+                    fieldbackground=DARK_INPUT_BG,
+                    background=DARK_BG3,
+                    foreground=DARK_FG,
+                    selectbackground=DARK_ACCENT,
+                    selectforeground='#ffffff',
+                    arrowcolor=DARK_FG_DIM)
+    style.map('TCombobox',
+              fieldbackground=[('readonly', DARK_INPUT_BG)],
+              foreground=[('readonly', DARK_FG)])
+
     style.configure('Treeview',
                     background=DARK_BG2,
                     foreground=DARK_FG,

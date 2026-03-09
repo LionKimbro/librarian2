@@ -14,10 +14,11 @@ from librarian2.ui import theme
 from librarian2 import dispatch as d, state as st
 from librarian2.editors._common import (
     build_common_fields, apply_common_fields,
+    build_type_fields, apply_type_fields,
     make_button_row, add_button,
     open_with_os, copy_to_clipboard,
 )
-from librarian2.editors.file import _get_path, _set_path
+from librarian2.editors.file import _get_path, _set_path, _FORMAT_OPTS, _ENCODING_OPTS, _SEMANTIC_OPTS
 
 
 def can_handle(entry):
@@ -39,6 +40,10 @@ def build_json_file_editor(parent, entry, widgets):
     parent.columnconfigure(0, weight=1)
 
     next_row = build_common_fields(frame, entry, widgets, row_start=0)
+    next_row = build_type_fields(frame, entry, widgets, next_row,
+                                 format_opts=_FORMAT_OPTS,
+                                 encoding_opts=_ENCODING_OPTS,
+                                 semantic_opts=_SEMANTIC_OPTS)
 
     # --- Path field ---
     path_str = _get_path(entry)
@@ -115,6 +120,7 @@ def _apply(entry, path_var, widgets):
     if tags_error:
         d.dispatch(d.SET_STATUS, {'msg': tags_error, 'level': 'red'})
         return
+    apply_type_fields(entry, widgets)
     _set_path(entry, path_var.get())
     if new_id != original_id:
         d.dispatch(d.RENAME_ENTRY, {'old_id': original_id, 'new_id': new_id, 'entry': entry})
