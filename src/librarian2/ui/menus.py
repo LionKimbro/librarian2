@@ -288,7 +288,7 @@ def _enrich_from_document(entry):
         return
     try:
         data = json.loads(pathlib.Path(path_str).read_text(encoding='utf-8'))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return
     if not isinstance(data, dict):
         return

@@ -48,6 +48,19 @@ def _ensure_dirs():
     _outbox_path().mkdir(parents=True, exist_ok=True)
 
 
+def _clear_outbox():
+    """Delete all files in the outbox directory (non-recursive)."""
+    outbox = _outbox_path()
+    if not outbox.exists():
+        return
+    for f in outbox.iterdir():
+        if f.is_file():
+            try:
+                f.unlink()
+            except OSError:
+                pass
+
+
 # ---------------------------------------------------------------------------
 # Low-level message I/O
 # ---------------------------------------------------------------------------
@@ -99,6 +112,7 @@ def announce_self():
     """
     try:
         _ensure_dirs()
+        _clear_outbox()
         card      = _make_id_card()
         card_path = app.get_path('component-id-card.json', 'p')
         card_path.write_text(

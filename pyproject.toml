@@ -1,10 +1,35 @@
 [project]
 name = "lions-librarian"
-version = "0.1.0"
+version = "0.1.2"
+description = "A graphical registry editor for Librarian2 resource registries"
+readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.10"
+authors = [
+    { name = "Lion Kimbro" },
+]
+keywords = ["registry", "librarian", "resources", "llm", "gui"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Desktop Environment",
+    "Topic :: Utilities",
+]
 dependencies = [
     "lionscliapp",
 ]
+
+[project.urls]
+Homepage = "https://github.com/LionKimbro/librarian2"
+Repository = "https://github.com/LionKimbro/librarian2"
+
+[project.scripts]
+librarian = "librarian2._entry:main"
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -12,6 +37,3 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[project.scripts]
-librarian = "librarian2._entry:main"
