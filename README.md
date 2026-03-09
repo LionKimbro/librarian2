@@ -4,8 +4,7 @@ A graphical registry editor for Librarian2 resource registries.
 
 ---
 
-<!-- Screenshot -->
-![Lion's Librarian screenshot]([docs/screenshot.png](https://github.com/LionKimbro/librarian2/blob/main/docs/screenshot.png?raw=true))
+![Lion's Librarian screenshot](docs/screenshot.png)
 
 ---
 
