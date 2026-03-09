@@ -52,7 +52,9 @@ def run_editor():
         # No registry yet — point state at the default path so Save works.
         st.g[st.REG_PATH] = registry_path
 
+    load_window_geometry(root)
     root.deiconify()
+    bind_geometry_saves(root)
     root.mainloop()
 
 
@@ -152,3 +154,60 @@ def _restore_focus(g, key):
 def _save():
     d.dispatch(d.SAVE_REGISTRY)
     refresh_all(st.g)
+
+
+# ---------------------------------------------------------------------------
+# Window geometry persistence  (.librarian2/window.json)
+# ---------------------------------------------------------------------------
+
+_geometry_save_id = None   # after() handle for debouncing Configure events
+
+
+def load_window_geometry(root):
+    """Read window.json and apply saved width, height, and sash position."""
+    try:
+        data = app.read_json('window.json', 'p')
+    except FileNotFoundError:
+        return
+    w = int(data.get('width',  800))
+    h = int(data.get('height', 600))
+    root.geometry(f'{w}x{h}')
+    sash = data.get('sash')
+    if sash is not None:
+        paned = st.g[st.WIDGETS].get('paned')
+        if paned:
+            # Defer until after the window is fully laid out
+            root.after(100, lambda: paned.sashpos(0, int(sash)))
+
+
+def save_window_geometry(root):
+    """Write current width, height, and sash position to window.json."""
+    paned = st.g[st.WIDGETS].get('paned')
+    data  = {
+        'width':  root.winfo_width(),
+        'height': root.winfo_height(),
+        'sash':   paned.sashpos(0) if paned else 0,
+    }
+    try:
+        app.write_json('window.json', data, 'p2')
+    except Exception:
+        pass
+
+
+def bind_geometry_saves(root):
+    """Bind resize and sash-drag events to save window geometry."""
+    # Debounce Configure so we don't write on every pixel of resize
+    root.bind('<Configure>',
+              lambda e: _on_root_configure(e, root))
+    paned = st.g[st.WIDGETS].get('paned')
+    if paned:
+        paned.bind('<ButtonRelease-1>', lambda e: save_window_geometry(root))
+
+
+def _on_root_configure(event, root):
+    global _geometry_save_id
+    if event.widget is not root:
+        return
+    if _geometry_save_id is not None:
+        root.after_cancel(_geometry_save_id)
+    _geometry_save_id = root.after(300, lambda: save_window_geometry(root))
