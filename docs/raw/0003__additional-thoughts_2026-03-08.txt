@@ -1,0 +1,56 @@
+date: 2026-03-08
+
+
+== Implementing ==
+date: 2026-03-08
+
+"How could I DRAMATICALLY speed up the registry editor's development?"
+  - Declare intentions to Claude, and just -- have it do it.
+  - Pyramid the spec.  <--- INTERESTING
+    - FEED in the data format
+    - ask for a user interface description
+    - ask for an implementation architecture description
+
+
+Plan:
+
+1. Tie up the user interface discussion so far, into JSON.
+2. Then start a pyramid spec, starting with the intention of the program.
+  - describe the high level details:
+    - an index pane on the left
+    - a detail view on the right
+    - the detail view can shift from raw JSON, to a view (a tkinter.Form, really) that is qualified to interact with the data
+      - there can be multiple views of the data
+      - qualification is defined via a function
+    - support the four base resource types
+    - purpose must absolutely be editable, it is the key behind the whole thing
+    - user interface details
+      - general notes:
+        - it needs to be possible to do most operations while the focus is within the Text widget
+          - choose accelerator combos that do not conflict with tkinter.Text as much as possible
+        - most common menu items should have an underline value, so that they can be jumped to from the keyboard
+      - index (left pane):
+        - in the tree, show the id (and sort by the id), do not show the title, do not show tags; indicate type with a unicode character (folder=🗀, file=🗎, url=🔗, program=λ)
+      - editor (right pane):
+        - do NOT permit general manipulation; make manipulation tied to the form:
+          - when editing folders or files, show "path: [______________________][browse][open][containing][path][(full)]"
+            - [browse] = replace with results of using a file/folder picker dialog
+            - [open] = open it via the operating system's default explorer/handler
+            - [containing] = open the folder that contains the file, via the OS's default explorer/handler
+            - [path] = copy the path to the resource to the clipboard
+            - [(full)] = copy the full path to the resource to the clipboard
+          - when editing urls, show: "url: [__________________________________][open][url]"
+            - [open] = open it in the default web browser
+            - [url] = copy the URL itself to the clipboard
+          - if the editor encounters an "inline" value, refuse form-based editing; the user must use JSON-based editing
+          - if the editor encounters ANYTHING it doesn't know how to handle (or how to gracefully ignore or work around,) the user must use JSON-based editing
+            - again, there should be some kind of a function that gates use of a particular form: "can I SAFELY handle this data?"  if there is a risk that the operation of the form will break the record, then the form should not be applied; it is acceptable that a form is not able to completely handle the record, but it must not break (and often, the temptation would be to REPLACE something present,) the record
+          - JSON files are special; when editing the JSON files, (as detected by the type information,) have buttons "Copy JSON" and "(min)" to copy the JSON to the clipboard with indent=2, and when using (min), as a minified form (compact, no indent).
+      - adding entries:
+        - ideally, there'd be a drag-and-drop
+        - barring that, there should be menu items and buttons for: Add File, Add Folder, Add URL, Add Program, which then open a dialog for locating the resource, or entering a URL.
+      - patchboard integration
+        - it should be easy to emit the selected item to patchboard output (channel: selected-item), outputting the record details to the patchboard
+        - it should also accept submissions via patchboard filetalk, on channels add-file, add-folder, add-url, add-program, and with signals that provide relevant details; the patchboard input and the patchboard output should match, so that the output from the program can also meaningfully be its input
+
+

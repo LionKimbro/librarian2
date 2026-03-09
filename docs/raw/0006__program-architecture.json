@@ -1,0 +1,366 @@
+{
+  "document": {
+    "document-id": "librarian2.registry-editor.architecture.v1",
+    "title": "Librarian2 Registry Editor Implementation Architecture",
+    "purpose": "Describe the implementation architecture, modules, and development plan required to build the Librarian2 Registry Editor.",
+    "status": "working-implementation-plan",
+    "author": "Lion + ChatGPT",
+    "date": "2026-03-08"
+  },
+  "architecture_overview": {
+    "description": "The Librarian2 Registry Editor is implemented as a reducer-driven application that manages registry data and UI state through dispatched actions. The reducer core owns all application state transitions while the UI renders state and dispatches actions.",
+    "principles": [
+      "All application state changes must occur through reducer actions.",
+      "UI code must not directly mutate registry data.",
+      "Unknown fields must always be preserved.",
+      "Form editors operate only when safe; otherwise raw JSON editing is used."
+    ]
+  },
+  "implementation_dependencies": [
+    {
+      "name": "lionscliapp",
+      "type": "cli_application_framework",
+      "role": "Provides command parsing, persistent configuration storage, and command dispatch for the patchboard-run command-line tool.",
+      "rationale": "Using lionscliapp reduces boilerplate for CLI argument parsing, project configuration management, and command routing, allowing patchboard-run to focus on process lifecycle management rather than CLI infrastructure.",
+      "impact_on_architecture": "None. lionscliapp is an implementation convenience and is not required by Patchboard, FileTalk, or component specifications.",
+      "documentation_reference": "lionscliapp.reference.v1",
+      "documentation_location": "F:\\lion\\github\\lionscliapp\\doc\\reference.json"
+    }
+  ],
+  "core_runtime_model": {
+    "components": [
+      "Reducer Core",
+      "Application State",
+      "UI Layer",
+      "Form Editors",
+      "JSON Editor",
+      "Script Runner",
+      "Registry Persistence",
+      "Patchboard Interface"
+    ]
+  },
+  "application_state": {
+    "description": "Central immutable-ish state object managed by the reducer.",
+    "fields": [
+      "registry_document",
+      "registry_entries",
+      "selected_entry_id",
+      "editor_mode",
+      "dirty_flag",
+      "status_message",
+      "error_state"
+    ]
+  },
+  "actions": {
+    "description": "All operations in the system are represented as dispatched actions.",
+    "examples": [
+      "load_registry",
+      "select_entry",
+      "update_entry",
+      "add_entry",
+      "delete_entry",
+      "run_script",
+      "save_registry",
+      "patchboard_input",
+      "patchboard_emit"
+    ]
+  },
+  "reducer_modules": {
+    "description": "Reducers handle state transitions for specific areas of responsibility.",
+    "modules": [
+      "registry_reducer",
+      "entry_reducer",
+      "selection_reducer",
+      "script_reducer",
+      "ui_reducer"
+    ]
+  },
+  "ui_architecture": {
+    "layout": "Two-pane interface",
+    "left_pane": {
+      "component": "EntryIndex",
+      "behavior": [
+        "Shows resource IDs sorted by ID",
+        "Displays logical type using unicode icons",
+        "Does not display title or tags"
+      ]
+    },
+    "right_pane": {
+      "component": "EntryEditor",
+      "modes": [
+        "FormEditor",
+        "JSONEditor"
+      ]
+    }
+  },
+  "form_editor_system": {
+    "description": "Structured editing interfaces for common resource types.",
+    "supported_types": [
+      "file",
+      "folder",
+      "program",
+      "url"
+    ],
+    "selection_logic": "Form editors activate based on type.logical.base.",
+    "safety_rule": "Forms must refuse activation if the record contains structures they cannot safely preserve."
+  },
+  "form_components": {
+    "file_editor": [
+      "path field",
+      "browse button",
+      "open button",
+      "open containing folder",
+      "copy path",
+      "copy full path"
+    ],
+    "url_editor": [
+      "url field",
+      "open url",
+      "copy url"
+    ]
+  },
+  "record_editor_system": {
+    "description": "The right-hand editor pane edits the JSON record describing a resource entry within the registry. The editor does not modify the underlying resource itself (file, folder, or URL); it modifies the registry record that describes that resource.",
+    "editor_selection_rule": "Editors are selected based on the record's type.logical.base and related metadata. If the editor cannot safely handle the record, the Raw Record Editor must be used.",
+    "available_editors": [
+      "Raw Record Editor",
+      "File Record Editor",
+      "JSON Record Editor",
+      "Folder Record Editor",
+      "URL Record Editor",
+      "Program Record Editor (reserved)"
+    ]
+  },
+  "record_editors": {
+    "raw_record_editor": {
+      "description": "Fallback editor that displays and edits the raw JSON of the registry record.",
+      "purpose": "Guarantee that any valid registry entry can be edited.",
+      "features": [
+        "Direct editing of record JSON",
+        "Copy JSON (indent=2)",
+        "Copy JSON (minified)"
+      ]
+    },
+    "file_record_editor": {
+      "description": "Structured editor for registry records describing files.",
+      "activation_condition": "type.logical.base == 'file' and format is not JSON-specific",
+      "fields": [
+        "path field"
+      ],
+      "actions": [
+        "browse (file picker)",
+        "open file",
+        "open containing folder",
+        "copy path",
+        "copy full path"
+      ]
+    },
+    "json_record_editor": {
+      "description": "Specialized editor for registry records describing JSON files.",
+      "activation_condition": "type.logical.base == 'file' and type.logical.format == 'json'",
+      "fields": [
+        "path field"
+      ],
+      "actions": [
+        "browse",
+        "open file",
+        "open containing folder",
+        "copy path",
+        "copy full path",
+        "copy JSON (indent=2)",
+        "copy JSON (minified)"
+      ]
+    },
+    "folder_record_editor": {
+      "description": "Structured editor for registry records describing folders.",
+      "activation_condition": "type.logical.base == 'folder'",
+      "fields": [
+        "path field"
+      ],
+      "actions": [
+        "browse (folder picker)",
+        "open folder",
+        "copy path",
+        "copy full path"
+      ]
+    },
+    "url_record_editor": {
+      "description": "Structured editor for registry records describing URLs.",
+      "activation_condition": "type.logical.base == 'url'",
+      "fields": [
+        "url field"
+      ],
+      "actions": [
+        "open url in browser",
+        "copy url"
+      ]
+    },
+    "program_record_editor": {
+      "description": "Reserved editor for records describing executable programs.",
+      "status": "not implemented",
+      "notes": [
+        "Placeholder for future development",
+        "May expose runtime and invocation metadata from the type.logical.runtime or invoke fields"
+      ]
+    }
+  },
+  "editor_safety_rules": [
+    "Editors must update only the fields they explicitly control.",
+    "Editors must preserve unknown fields.",
+    "If the record contains structures the editor cannot safely preserve, the Raw Record Editor must be used instead."
+  ],
+  "json_editor": {
+    "description": "Fallback editor allowing full JSON editing.",
+    "features": [
+      "direct editing of entry JSON",
+      "copy json (indent=2)",
+      "copy json (minified)"
+    ]
+  },
+  "script_system": {
+    "description": "User-defined scripts that operate on the selected registry record.",
+    "execution_model": [
+      "script receives record dictionary D",
+      "script modifies D",
+      "resulting record is dispatched through reducer"
+    ],
+    "constraints": [
+      "scripts must operate only on the selected record",
+      "scripts must preserve unknown fields"
+    ]
+  },
+  "registry_persistence": {
+    "description": "Loading and saving registry files.",
+    "features": [
+      "load registry JSON",
+      "write registry JSON",
+      "preserve formatting when possible",
+      "maintain human-readable structure"
+    ]
+  },
+  "patchboard_integration": {
+    "output": {
+      "channel": "selected-item",
+      "payload": "selected registry entry"
+    },
+    "input_channels": [
+      "add-file",
+      "add-folder",
+      "add-url",
+      "add-program"
+    ]
+  },
+  "unknown_field_protection": {
+    "description": "The editor must never discard unknown fields.",
+    "rules": [
+      "Reducers must merge updates rather than rebuild entries.",
+      "Form editors must update only fields they explicitly control.",
+      "Raw JSON editing must always remain available."
+    ]
+  },
+  "implementation_modules": [
+    "app.py",
+    "state.py",
+    "reducers/",
+    "ui/",
+    "editors/",
+    "scripts/",
+    "registry_io.py",
+    "patchboard.py"
+  ],
+  "recommended_project_structure": {
+    "layout": [
+      "src/librarian2_editor/",
+      "  app.py",
+      "  state.py",
+      "  dispatch.py",
+      "  reducers/",
+      "  ui/",
+      "  editors/",
+      "  scripts/",
+      "  registry_io.py",
+      "  patchboard.py"
+    ]
+  },
+  "testing_strategy": {
+    "reducer_tests": [
+      "loading registry",
+      "editing entry",
+      "adding entry",
+      "deleting entry",
+      "running script"
+    ],
+    "editor_tests": [
+      "file editor path editing",
+      "url editor behavior",
+      "JSON fallback mode"
+    ],
+    "safety_tests": [
+      "unknown fields preserved",
+      "form refuses unsupported structures"
+    ]
+  },
+  "implementation_plan": {
+    "phase_1_core_engine": {
+      "description": "Establish the reducer-driven application core.",
+      "tasks": [
+        "Create reducer engine",
+        "Implement dispatch system",
+        "Define and initialize application state",
+        "Create reducer module structure"
+      ]
+    },
+    "phase_2_registry_support": {
+      "description": "Implement loading, saving, and indexing of registry files.",
+      "tasks": [
+        "Implement registry loading",
+        "Implement registry saving",
+        "Implement entry index data model",
+        "Implement entry index widget"
+      ]
+    },
+    "phase_3_ui_framework": {
+      "description": "Establish the main UI layout and navigation behavior.",
+      "tasks": [
+        "Implement two-pane layout",
+        "Implement entry selection",
+        "Implement status bar",
+        "Implement dirty flag indicator"
+      ]
+    },
+    "phase_4_record_editors": {
+      "description": "Implement record editors for the common resource types.",
+      "tasks": [
+        "Implement Raw Record Editor",
+        "Implement File Record Editor",
+        "Implement Folder Record Editor",
+        "Implement URL Record Editor",
+        "Implement JSON Record Editor"
+      ]
+    },
+    "phase_5_automation_and_integration": {
+      "description": "Implement extensibility and external tool integration.",
+      "tasks": [
+        "Implement script runner",
+        "Implement script registration and hotkey system",
+        "Implement Patchboard interface",
+        "Implement Patchboard output for selected-item"
+      ]
+    }
+  },
+  "80_20_guideline": {
+    "description": "Focus development effort on the most common operations.",
+    "priority_features": [
+      "editing files",
+      "editing folders",
+      "editing URLs",
+      "editing JSON files",
+      "adding new entries"
+    ],
+    "deferred_complexity": [
+      "rare location descriptors",
+      "inline resources",
+      "exotic protocol integrations"
+    ]
+  }
+}

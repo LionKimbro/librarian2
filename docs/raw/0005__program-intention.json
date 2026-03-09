@@ -1,0 +1,110 @@
+{
+  "document": {
+    "document-id": "librarian2.registry-editor.intention.v1",
+    "title": "Librarian2 Registry Editor — Program Intention",
+    "purpose": "Describe the core intention, mission, and conceptual scope of the Librarian2 Registry Editor before implementation details are defined.",
+    "status": "conceptual-spec",
+    "author": "Lion + ChatGPT",
+    "date": "2026-03-08"
+  },
+  "program_identity": {
+    "name": "librarian2-editor",
+    "category": "developer tool",
+    "description": "A graphical editor for Librarian2 resource registries designed to make it easy for humans to create, inspect, and maintain librarian2 registry files."
+  },
+  "core_intention": {
+    "primary_goal": "Make it easy and safe to create and maintain Librarian2 resource registries.",
+    "secondary_goal": "Enable rapid discovery and maintenance of resources so that LLM-based tools can quickly orient themselves within a developer's working environment.",
+    "guiding_principle": "Provide structured editing when it is safe, and raw JSON editing when it is not."
+  },
+  "problem_statement": {
+    "description": "Librarian2 registry files are intended to be written and read by both humans and automated tools. Editing them directly as JSON can be slow and error-prone, particularly when dealing with structured fields such as resource types and locations. The Librarian2 Registry Editor exists to provide a safe, efficient interface for creating and modifying registry entries without restricting the flexibility of the schema."
+  },
+  "design_goals": [
+    "Make it easy to quickly create, edit, and delete registry entries: files, folders, programs, and URLs.",
+    "Specifically and especially support JSON files.",
+    "Protect the openness and extensibility of the Librarian2 schema.",
+    "Prevent editing tools from corrupting or discarding unknown fields.",
+    "Keep the system comfortable for both keyboard-driven and mouse-driven users.",
+    "Support interaction with other tools and automation systems via Patchboard and the clipboard."
+  ],
+  "editing_philosophy": {
+    "structured_editing": "When the editor understands the structure of a resource entry, it should present a form-based interface that simplifies editing.",
+    "fallback_editing": "When the editor cannot safely interpret an entry, it must fall back to raw JSON editing.",
+    "safety_rule": "Form-based editors must never modify fields they do not understand.",
+    "data_integrity_rule": "Unknown fields must always be preserved.",
+    "eighty-twenty_principle": "The editor follows the 80/20 principle: it aims to provide excellent, streamlined editing support for the most common resource types and operations (files, folders, URLs, programs, and typical metadata), while intentionally avoiding exhaustive coverage of every possible schema variation; uncommon or complex cases should fall back to raw JSON editing rather than complicating the form-based interface.",
+    "supporting_paths": "Wherever there is a path, make it easy to open the file or folder using OS default tooling, and make it easy to copy the path to the clipboard (in given terms or expressed as a fully resolved path,) and to access the folder containing the file or folder",
+    "supporting_urls": "Wherever there is a URL, make it easy to open the URL in a web browser, and make it easy to copy the URL to the clipboard.",
+    "unknown_field_protection": "Forms must not destroy, overwrite, or replace fields they do not understand. Unknown data must pass through the editor unchanged."
+  },
+  "conceptual_model": {
+    "registry": "A registry is a flat directory of resource records.",
+    "resource": "A resource entry describes an artifact such as a file, folder, program, or URL.",
+    "editor_role": "The editor allows users to navigate, inspect, and modify these entries efficiently."
+  },
+  "key_capabilities": [
+    "Browse resource entries within a registry.",
+    "Inspect resource metadata.",
+    "Edit resource entries safely.",
+    "Add new resource entries quickly.",
+    "Delete resources",
+    "Jump to environmental tools like the file browser, web browser.",
+    "Support use of resources with the clipboard.",
+    "Provide raw JSON editing for advanced users or unconventional data.",
+    "Execute user-defined scripts against the currently selected registry record."
+  ],
+  "record_scripts": {
+    "description": "The editor should support user-defined scripts that operate on the currently selected registry record.",
+    "purpose": "Allow users to rapidly automate common record manipulations without modifying the editor itself.",
+    "concept": [
+      "A script can be defined once and assigned to a keyboard shortcut or menu item.",
+      "When triggered, the script receives the currently selected registry record as a dictionary (for example D).",
+      "The script may inspect or modify the record.",
+      "After execution, the editor reloads the record, re-evaluates the form view, and refreshes the display."
+    ],
+    "examples_of_use": [
+      "Normalize paths.",
+      "Generate tags automatically.",
+      "Convert location descriptors.",
+      "Extract information from paths into metadata fields."
+    ],
+    "design_principles": [
+      "Scripts operate only on the selected record.",
+      "Scripts should not require modification of the core editor.",
+      "Script execution should be quick and interactive.",
+      "The editor must preserve safety and prevent unintended corruption of the registry."
+    ]
+  },
+  "user_interface_concept": {
+    "layout": "Two-pane interface with an entry index on the left and an editor pane on the right.",
+    "navigation": "Users select entries from the index to view or edit them.",
+    "editing_modes": [
+      "Typed editing forms",
+      "Raw JSON editing"
+    ],
+    "visible_dirty_flag": "a status indicator -- a red/green dot -- indicating whether the resource data is dirty (needs to be saved) or fresh",
+    "status_bar": "there's a status bar that can have green (safe), blue (highlighted), red (warning/danger/error), or blackwhite (default status info) text to communicate to the user",
+    "dark_mode": "all widgets should be expressed in a dark mode form"
+  },
+  "integration_goals": {
+    "patchboard_integration": "Allow communication with Patchboard systems to emit or receive resource entries.",
+    "clipboard_integration": "Make it easy to paste coordinates to the clipboard"
+  },
+  "expected_users": [
+    "Developers maintaining registry files",
+    "LLM-assisted development workflows",
+    "Automation tools interacting with registries"
+  ],
+  "non_goals": [
+    "The editor is not responsible for interpreting the meaning of registry entries beyond what is necessary for safe editing.",
+    "The editor is not responsible for executing programs referenced by registry entries.",
+    "The editor is not a knowledge management system."
+  ],
+  "success_criteria": [
+    "A developer can quickly add resources to a registry, and delete resources in a registry.",
+    "Registry files remain valid and human-readable.",
+    "Unknown schema extensions are preserved without loss.",
+    "LLM tools can easily consume the resulting registry files."
+  ]
+}

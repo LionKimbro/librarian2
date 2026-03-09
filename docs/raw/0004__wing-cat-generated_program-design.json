@@ -1,0 +1,211 @@
+{
+  "document": {
+    "document-id": "librarian2.registry-editor.design.v1",
+    "title": "Librarian2 Registry Editor Design",
+    "purpose": "Describe the design and behavior of the Librarian2 Registry Editor application, a schema-aware tool for creating and editing Librarian2 resource registry files.",
+    "status": "working-design",
+    "author": "Lion + ChatGPT",
+    "date": "2026-03-08"
+  },
+  "overview": {
+    "description": "The Librarian2 Registry Editor is a schema-aware JSON editor specialized for Librarian2 registry files. Its purpose is to make editing registry files fast, safe, and pleasant while preserving the flexibility and openness of the registry schema.",
+    "core_goals": [
+      "Make registry editing fast and intuitive",
+      "Preserve human-readable JSON",
+      "Support schema-aware editing where possible",
+      "Gracefully handle unknown or future schema extensions",
+      "Always allow raw JSON editing"
+    ],
+    "guiding_principle": "Typed editors when possible, raw JSON when necessary."
+  },
+  "ui_layout": {
+    "description": "The editor uses a two-pane layout with an entry index on the left and a resource editor on the right.",
+    "structure": {
+      "left_pane": {
+        "name": "registry_entries",
+        "description": "Displays a list of resource entries contained in the registry.",
+        "features": [
+          "Entry list by ID",
+          "Optional display of title",
+          "Optional display of logical and semantic types",
+          "Sorting options"
+        ]
+      },
+      "right_pane": {
+        "name": "resource_editor",
+        "description": "Displays the editable contents of the selected resource entry.",
+        "editor_modes": [
+          "typed_editor",
+          "raw_json_editor"
+        ]
+      }
+    }
+  },
+  "entry_index": {
+    "description": "The entry index lists all resources in the registry.",
+    "display_fields": [
+      "id",
+      "title (optional)",
+      "logical.base (optional)",
+      "semantic.base (optional)"
+    ],
+    "sorting_options": [
+      "id",
+      "title",
+      "type",
+      "tags"
+    ],
+    "example_display": [
+      "patchboard_router_spec    file/json    spec",
+      "jsonedit_tool             program/python tool",
+      "lion_documents            folder        raw-docs",
+      "'0                        folder"
+    ]
+  },
+  "editor_modes": {
+    "typed_editor": {
+      "description": "The typed editor provides structured editing controls for known fields and recognized type patterns.",
+      "sections": [
+        "identity",
+        "purpose",
+        "type",
+        "locations",
+        "tags",
+        "description"
+      ],
+      "location_editor": {
+        "description": "Allows editing and creation of location descriptors.",
+        "features": [
+          "Add location",
+          "Edit descriptor keys",
+          "Add additional descriptor fields",
+          "Inline content editing"
+        ]
+      }
+    },
+    "raw_json_editor": {
+      "description": "Displays the full JSON representation of the resource entry.",
+      "features": [
+        "Direct JSON editing",
+        "Always available toggle",
+        "Default fallback for unknown types"
+      ],
+      "purpose": [
+        "Support experimental schema extensions",
+        "Enable debugging and inspection",
+        "Guarantee that any valid registry can be edited"
+      ]
+    }
+  },
+  "type_aware_editing": {
+    "description": "The editor inspects the type field and activates specialized editing interfaces when possible.",
+    "decision_logic": {
+      "primary_fields": [
+        "type.logical.base",
+        "type.semantic.base"
+      ]
+    },
+    "recognized_editors": [
+      {
+        "logical_base": "file",
+        "editor": "file_editor"
+      },
+      {
+        "logical_base": "folder",
+        "editor": "folder_editor"
+      },
+      {
+        "logical_base": "program",
+        "editor": "program_editor"
+      },
+      {
+        "logical_base": "url",
+        "editor": "url_editor"
+      }
+    ],
+    "fallback_behavior": "If a type is not recognized, the editor falls back to the raw JSON editor."
+  },
+  "location_editor": {
+    "description": "Location descriptors are edited as open-ended objects.",
+    "supported_common_types": [
+      "path",
+      "url",
+      "inline"
+    ],
+    "custom_descriptor_support": {
+      "description": "Users may define arbitrary location descriptor keys.",
+      "example": {
+        "telnet": "foo.example.com",
+        "port": 90
+      }
+    },
+    "principle": "The editor must allow arbitrary descriptor fields so that future protocols and access methods can be represented without schema changes."
+  },
+  "entry_creation": {
+    "description": "Creating a new entry should require minimal information.",
+    "minimal_required_fields": [
+      "id",
+      "purpose"
+    ],
+    "optional_fields": [
+      "title",
+      "type",
+      "location",
+      "tags",
+      "description"
+    ],
+    "creation_flow": [
+      "choose id",
+      "enter purpose",
+      "optionally add metadata"
+    ]
+  },
+  "positional_entries": {
+    "description": "The editor supports positional convenience entries.",
+    "behavior": {
+      "generation": [
+        "'0",
+        "'1",
+        "'2"
+      ],
+      "rules": [
+        "These entries are not stable identifiers",
+        "They may be renumbered automatically",
+        "They should not be referenced by other entries"
+      ]
+    }
+  },
+  "registry_navigation": {
+    "description": "Future versions of the editor may allow navigation between registries.",
+    "trigger_condition": {
+      "semantic_base": "librarian2registry"
+    },
+    "behavior": [
+      "Allow opening referenced registries",
+      "Provide a multi-registry navigation view"
+    ]
+  },
+  "safety_features": {
+    "description": "Because registry files are important infrastructure, the editor should provide safety mechanisms.",
+    "features": [
+      "autosave",
+      "JSON validation",
+      "diff viewer",
+      "schema hints"
+    ],
+    "important_rule": "The editor must not enforce strict validation that would prevent editing of registries containing unknown or extended fields."
+  },
+  "technology_considerations": {
+    "description": "The editor is expected to integrate naturally with Lion's existing tool ecosystem.",
+    "possible_stack": [
+      "Python",
+      "Tkinter",
+      "jsonedit integration",
+      "lionscliapp command-line integration"
+    ]
+  },
+  "architectural_observation": {
+    "description": "The Librarian2 registry editor functions as a navigation and management interface for a developer's resource ecosystem.",
+    "analogy": "It behaves similarly to a package index browser, but operates locally and describes arbitrary resources rather than packages."
+  }
+}
