@@ -1,0 +1,68 @@
+{
+  "document": {
+    "document-id": "librarian2.registry-editor.progress-additions.2026-03-08",
+    "title": "Librarian2 Registry Editor — Additions to Claude's Progress Report",
+    "purpose": "Documents feature gaps identified after the initial progress report: tags editing and entry ID renaming. Describes the expected behavior and implementation notes for each.",
+    "status": "feature-request",
+    "author": "Lion",
+    "date": "2026-03-08",
+    "relates-to": "0007__claudes-progress-report_2026-03-08.json"
+  },
+
+  "features": {
+
+    "tags_editing": {
+      "rating": "green",
+      "priority": "high",
+      "summary": "Tags are part of the registry schema and a key discoverability mechanism, but there is currently no way to edit them in the program.",
+      "implemented": "tags field added to _common.py between title and purpose. Space-separated display, split on apply, validated against ^[a-zA-Z0-9_]+$, red status on invalid token, clears the field key entirely when emptied.",
+      "schema_context": {
+        "field": "tags",
+        "type": "array of strings",
+        "tag_pattern": "^[a-zA-Z0-9_]+$",
+        "notes": "Each tag is a single word composed of letters, digits, and underscores. No spaces, no hyphens, no punctuation."
+      },
+      "ui_placement": "In all structured form editors (file, folder, url, json_file), tags should appear as a field after 'title' and before 'purpose'. The field order in every form editor is therefore: id, title, tags, purpose.",
+      "widget_design": {
+        "input": "A single-line Entry widget.",
+        "representation": "Tags are displayed and edited as a space-separated string. Example: 'spec schema documentation'.",
+        "read": "Split the entry value on whitespace to produce the tags array.",
+        "write": "Join the tags array with single spaces to populate the widget.",
+        "validation": "On Apply, reject any token that does not match ^[a-zA-Z0-9_]+$ and show a red status message naming the offending token. Do not silently drop tags."
+      },
+      "implementation_notes": [
+        "Add tags field to _common.py build_common_fields() and apply_common_fields(), between title and purpose.",
+        "apply_common_fields() must split on whitespace and filter empty strings when writing back to the entry.",
+        "build_common_fields() must join entry.get('tags', []) with spaces when populating the widget.",
+        "The raw JSON editor already handles tags correctly since it shows the full record."
+      ]
+    },
+
+    "id_renaming": {
+      "rating": "red",
+      "priority": "high",
+      "summary": "The 'id' field in every form editor is currently editable as a text box, but editing it and pressing Apply does not reindex the entry — the old id key remains in the registry dict and the new one is not created. ID renaming must be treated as a special operation: reindex under the new key and remove the old one.",
+      "current_behavior": "handle_update_entry does existing.update(payload), which updates the 'id' field inside the entry dict but does not change the dict key in g[REG_ENTRIES]. The entry is still stored and referenced under the old id.",
+      "desired_behavior": {
+        "collision_check": "Before applying, check whether the new id already exists in g[REG_ENTRIES] (excluding the current entry). If it collides, show a red status message and do not apply.",
+        "reindex": "If the new id is valid and does not collide: store the entry under the new key, delete the old key, update g[SELECTED_ID] to the new id.",
+        "index_refresh": "The entry index must reflect the new id immediately after the rename. Because the tree is rebuilt on refresh_all, this is automatic as long as SELECTED_ID is updated.",
+        "dirty_flag": "Set dirty after a successful rename."
+      },
+      "implementation_notes": [
+        "Add a new action RENAME_ENTRY to dispatch.py.",
+        "Add handle_rename_entry to reducers/entry.py. It receives {'old_id': str, 'new_id': str}. Performs collision check, reindexes, updates SELECTED_ID.",
+        "In the form editors, detect on Apply whether the id field value differs from the original id. If it does, dispatch RENAME_ENTRY instead of (or before) UPDATE_ENTRY.",
+        "The id Entry widget should have a distinct visual indicator (e.g. slightly different background) or a label note to signal that changing it renames the entry.",
+        "apply_common_fields() should return the new id so the calling editor can compare it to the original and decide whether to dispatch RENAME_ENTRY."
+      ]
+    }
+  },
+
+  "schema_update_note": {
+    "description": "The tag pattern has been tightened from the original schema draft.",
+    "old_pattern": "(not explicitly constrained in earlier versions)",
+    "new_pattern": "^[a-zA-Z0-9_]+$",
+    "implication": "Tags may not contain hyphens, spaces, or any punctuation. The space-separated editing widget naturally enforces the no-spaces rule at the structural level; the pattern validation on Apply enforces the character-level constraint."
+  }
+}

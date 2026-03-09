@@ -41,6 +41,35 @@ def handle_update_entry(payload):
     st.g[st.STATUS_LEVEL] = 'default'
 
 
+def handle_rename_entry(payload):
+    """Rename an entry: reindex under new_id, remove old_id.
+
+    payload: dict with keys:
+        'old_id': str — current key in REG_ENTRIES
+        'new_id': str — desired new key
+        'entry':  dict — the already-updated entry record
+
+    If new_id collides with an existing entry (other than old_id),
+    sets a red status message and does nothing.
+    """
+    old_id = payload['old_id']
+    new_id = payload['new_id']
+    entry  = payload['entry']
+
+    if new_id in st.g[st.REG_ENTRIES]:
+        st.g[st.STATUS_MSG]   = f'ID already exists: {new_id!r}'
+        st.g[st.STATUS_LEVEL] = 'red'
+        return
+
+    entry['id'] = new_id
+    del st.g[st.REG_ENTRIES][old_id]
+    st.g[st.REG_ENTRIES][new_id] = entry
+    st.g[st.SELECTED_ID]  = new_id
+    st.g[st.DIRTY]        = True
+    st.g[st.STATUS_MSG]   = f'Renamed: {old_id!r} \u2192 {new_id!r}'
+    st.g[st.STATUS_LEVEL] = 'green'
+
+
 def handle_delete_entry(payload):
     """Delete an entry by ID.
 

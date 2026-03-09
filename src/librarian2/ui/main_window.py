@@ -86,6 +86,13 @@ def bind_keys(root):
     root.bind('<Control-o>', lambda e: cmd_open_registry())
     root.bind('<Control-s>', lambda e: _save())
     root.bind('<Control-q>', lambda e: root.destroy())
+    root.bind('<Control-j>', lambda e: _toggle_editor_mode())
+
+
+def _toggle_editor_mode():
+    from librarian2.ui.menus import _set_editor_mode
+    new_mode = 'raw' if st.g[st.EDITOR_MODE] == 'form' else 'form'
+    _set_editor_mode(new_mode)
 
 
 def refresh_all(g):

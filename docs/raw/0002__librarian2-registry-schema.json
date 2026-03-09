@@ -103,7 +103,8 @@
         "type": "array",
         "required": false,
         "items": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_]+$"
         },
         "description": "Optional list of keywords that may help discovery."
       },

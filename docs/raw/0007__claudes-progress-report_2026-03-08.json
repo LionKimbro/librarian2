@@ -1,0 +1,361 @@
+{
+  "document": {
+    "document-id": "librarian2.registry-editor.progress-report.2026-03-08",
+    "title": "Librarian2 Registry Editor — Claude's Progress Report",
+    "purpose": "Status review of all features described in the design documents, classified by area and rated green/yellow/red.",
+    "status": "progress-report",
+    "author": "Claude",
+    "date": "2026-03-08",
+    "source-documents": [
+      "0002__librarian2-registry-schema.json",
+      "0003__additional-thoughts_2026-03-08.txt",
+      "0005__program-intention.json",
+      "0006__program-architecture.json"
+    ]
+  },
+
+  "rating_legend": {
+    "green":  "Done and working.",
+    "yellow": "Scaffolded or partly working — needs testing, polish, or missing pieces.",
+    "red":    "Not implemented."
+  },
+
+  "areas": {
+
+    "1_core_engine": {
+      "label": "Core Engine & Architecture",
+      "source": "0006 phase 1",
+      "features": {
+        "reducer_dispatch_system": {
+          "rating": "green",
+          "notes": "dispatch(), action constants, _setup() wiring all reducers. Works."
+        },
+        "application_state_bundle": {
+          "rating": "green",
+          "notes": "g dict with named key constants, init_state(). Clean."
+        },
+        "reducer_modules": {
+          "rating": "green",
+          "notes": "registry, entry, ui_state, script reducers all present and wired."
+        },
+        "unknown_field_preservation": {
+          "rating": "green",
+          "notes": "handle_update_entry merges (existing.update(payload)) rather than replacing. Forms only touch fields they know about."
+        }
+      }
+    },
+
+    "2_registry_io": {
+      "label": "Registry File I/O",
+      "source": "0006 phase 2",
+      "features": {
+        "load_registry": {
+          "rating": "green",
+          "notes": "Castle Gate normalization in registry_io.py. Validates that 'registry' is a dict."
+        },
+        "save_registry": {
+          "rating": "yellow",
+          "notes": "Atomic write implemented (tempfile + os.replace). Respects json.indent.registry config key. Not yet exercised enough in testing — Save menu item needs a confirm path when REG_PATH is None."
+        },
+        "default_registry_path": {
+          "rating": "green",
+          "notes": "Falls back to .librarian2/registry.json if path.registry is not set or not a file."
+        },
+        "atomic_writes": {
+          "rating": "green",
+          "notes": "tempfile + os.replace. UTF-8. Cleans up temp on failure."
+        }
+      }
+    },
+
+    "3_ui_framework": {
+      "label": "UI Framework & Layout",
+      "source": "0006 phase 3, 0005 user_interface_concept",
+      "features": {
+        "two_pane_layout": {
+          "rating": "green",
+          "notes": "Index left, editor right, status bar at bottom. Separator between panes."
+        },
+        "dark_mode": {
+          "rating": "yellow",
+          "notes": "Theme module defines full palette and ttk styles. Applied at startup. Not battle-tested across all widget types — some tk (non-ttk) widgets may render inconsistently."
+        },
+        "status_bar": {
+          "rating": "yellow",
+          "notes": "Built and wired. Green/blue/red/default levels defined. Refreshed after load, save, add, delete, update. Not yet shown after every meaningful action (e.g. script errors)."
+        },
+        "dirty_flag_dot": {
+          "rating": "yellow",
+          "notes": "Red/green dot built and wired to g[DIRTY]. Refreshed correctly in theory, but not stress-tested."
+        },
+        "lionscliapp_framing": {
+          "rating": "green",
+          "notes": "editor.py + _entry.py. Declares app, projectdir (.librarian2), three config keys (path.registry, path.scripts, json.indent.registry). Bare invocation and 'edit' command both launch GUI."
+        }
+      }
+    },
+
+    "4_entry_index": {
+      "label": "Entry Index (Left Pane)",
+      "source": "0003, 0006 phase 2",
+      "features": {
+        "sorted_by_id": {
+          "rating": "green",
+          "notes": "sorted(entries.keys()) used."
+        },
+        "unicode_type_icons": {
+          "rating": "green",
+          "notes": "🗎 file, 🗀 folder, 🔗 url, λ program, ? unknown. Derived from type.logical.base."
+        },
+        "no_title_or_tags_shown": {
+          "rating": "green",
+          "notes": "Only icon + id shown, per spec."
+        },
+        "selection_triggers_editor": {
+          "rating": "green",
+          "notes": "Fixed infinite loop bug (selection_set re-triggering TreeviewSelect). Now only refreshes editor and status bar, not the index itself."
+        },
+        "delete_key_in_tree": {
+          "rating": "green",
+          "notes": "Bound on the tree widget specifically, not root, so it doesn't fire when focus is in a text field."
+        }
+      }
+    },
+
+    "5_entry_management": {
+      "label": "Adding and Deleting Entries",
+      "source": "0003, 0005 key_capabilities",
+      "features": {
+        "add_file": {
+          "rating": "green",
+          "notes": "File picker, id derived from filename stem, format detected from extension, type.logical set correctly."
+        },
+        "add_folder": {
+          "rating": "green",
+          "notes": "Folder picker, id from folder name."
+        },
+        "add_url": {
+          "rating": "green",
+          "notes": "askstring dialog, id derived from hostname."
+        },
+        "add_program": {
+          "rating": "green",
+          "notes": "File picker, type.logical.base = 'program'."
+        },
+        "id_deduplication": {
+          "rating": "green",
+          "notes": "_unique_id() appends -2, -3 etc. if stem already exists."
+        },
+        "delete_with_confirmation": {
+          "rating": "green",
+          "notes": "askyesno confirmation dialog. Clears selection if deleted entry was selected."
+        },
+        "drag_and_drop": {
+          "rating": "red",
+          "notes": "Not implemented. Spec says 'ideally drag-and-drop; barring that, menu items' — menu items are done."
+        }
+      }
+    },
+
+    "6_form_editors": {
+      "label": "Form Editors (Right Pane)",
+      "source": "0003, 0005 editing_philosophy, 0006 phase 4",
+      "features": {
+        "editor_selector": {
+          "rating": "green",
+          "notes": "selector.py routes on type.logical.base (and .format for json). Falls back to raw if can_handle() returns False."
+        },
+        "can_handle_safety_gate": {
+          "rating": "yellow",
+          "notes": "Refuses entries with inline locations. Does not yet check for other exotic location structures (e.g. telnet, ssh descriptors alongside path). Sufficient for common cases."
+        },
+        "raw_record_editor": {
+          "rating": "green",
+          "notes": "Text widget with full JSON. Apply, Copy JSON, (min) buttons. Always available."
+        },
+        "file_record_editor": {
+          "rating": "yellow",
+          "notes": "Common fields (id, title, purpose) + path field + Browse/Open/Containing/Path/(full) buttons. Apply works. Not yet tested on Windows with real paths."
+        },
+        "folder_record_editor": {
+          "rating": "yellow",
+          "notes": "Same as file but Browse opens folder picker and no Containing button. Built, not thoroughly tested."
+        },
+        "url_record_editor": {
+          "rating": "yellow",
+          "notes": "URL field + Open (webbrowser) + URL (copy). Built, not tested."
+        },
+        "json_file_record_editor": {
+          "rating": "yellow",
+          "notes": "Extends file editor with Copy JSON and (min) buttons that read and copy the actual file contents. Built, not tested."
+        },
+        "program_record_editor": {
+          "rating": "red",
+          "notes": "Explicitly reserved/not implemented per spec. Falls back to raw editor."
+        },
+        "purpose_field_prominent": {
+          "rating": "green",
+          "notes": "purpose is a multi-line Text widget shown in every form editor. This is the key field per the spec."
+        },
+        "inline_resource_refusal": {
+          "rating": "yellow",
+          "notes": "can_handle() refuses inline locations, routing to raw editor. But there is no explicit message telling the user why form editing was refused."
+        },
+        "mode_toggle_button": {
+          "rating": "green",
+          "notes": "Header button toggles between form and raw modes. Label updates to reflect current mode."
+        },
+        "view_menu_mode_switch": {
+          "rating": "green",
+          "notes": "Fixed — View | Form Editor and View | Raw JSON Editor now call refresh after dispatching."
+        }
+      }
+    },
+
+    "7_keyboard_and_menus": {
+      "label": "Keyboard & Menu Accessibility",
+      "source": "0003 general notes",
+      "features": {
+        "menu_underlines": {
+          "rating": "green",
+          "notes": "underline= set on all cascade and command items for Alt+key navigation."
+        },
+        "ctrl_o_open": { "rating": "green", "notes": "Bound on root." },
+        "ctrl_s_save": { "rating": "green", "notes": "Bound on root." },
+        "ctrl_q_quit": { "rating": "green", "notes": "Bound on root." },
+        "delete_key":  { "rating": "green", "notes": "Bound on tree widget specifically." },
+        "keyboard_while_in_text_widget": {
+          "rating": "yellow",
+          "notes": "Ctrl+O/S/Q are safe (don't conflict with Text). Delete bound only on tree, not root. Accelerators for Add Entry (e.g. Ctrl+F for Add File) not yet defined."
+        },
+        "add_entry_accelerators": {
+          "rating": "red",
+          "notes": "No keyboard shortcuts for Add File/Folder/URL/Program."
+        }
+      }
+    },
+
+    "8_os_integration": {
+      "label": "OS Integration (Open, Copy Path/URL)",
+      "source": "0003, 0005 supporting_paths / supporting_urls",
+      "features": {
+        "open_file_with_os": {
+          "rating": "yellow",
+          "notes": "_common.py open_with_os() uses os.startfile on Windows, open on macOS, xdg-open on Linux. Not yet tested."
+        },
+        "open_containing_folder": {
+          "rating": "yellow",
+          "notes": "Opens parent directory. Present in file and json_file editors."
+        },
+        "copy_path_to_clipboard": {
+          "rating": "yellow",
+          "notes": "copy_to_clipboard() via root.clipboard_clear/append. Present in file, folder, json_file editors."
+        },
+        "copy_full_resolved_path": {
+          "rating": "yellow",
+          "notes": "pathlib.Path.resolve() used. Present in file, folder, json_file editors."
+        },
+        "open_url_in_browser": {
+          "rating": "yellow",
+          "notes": "webbrowser.open() in url editor. Not tested."
+        },
+        "copy_url_to_clipboard": {
+          "rating": "yellow",
+          "notes": "Present in url editor. Not tested."
+        },
+        "copy_json_content": {
+          "rating": "yellow",
+          "notes": "json_file editor reads the actual file and copies contents (pretty or minified). Not tested."
+        }
+      }
+    },
+
+    "9_script_system": {
+      "label": "User-Defined Record Scripts",
+      "source": "0005 record_scripts, 0006 phase 5",
+      "features": {
+        "script_runner_core": {
+          "rating": "yellow",
+          "notes": "scripts/runner.py exists. exec()s the script with D=record, returns modified D. Reducer wires it back. Solid foundation."
+        },
+        "script_ui_trigger": {
+          "rating": "red",
+          "notes": "No menu item, no keyboard shortcut, no dialog to select and run a script."
+        },
+        "script_registration_and_hotkeys": {
+          "rating": "red",
+          "notes": "No mechanism for registering scripts to menu items or hotkeys."
+        }
+      }
+    },
+
+    "10_patchboard": {
+      "label": "Patchboard Integration",
+      "source": "0003, 0005 integration_goals, 0006 phase 5",
+      "features": {
+        "emit_selected_item": {
+          "rating": "red",
+          "notes": "patchboard.py handle_emit is a stub. Channel 'selected-item' not yet implemented."
+        },
+        "input_channels": {
+          "rating": "red",
+          "notes": "add-file, add-folder, add-url, add-program input channels not implemented. after()-based polling loop not started."
+        },
+        "input_output_symmetry": {
+          "rating": "red",
+          "notes": "By design intent but nothing implemented yet."
+        }
+      }
+    },
+
+    "11_schema_coverage": {
+      "label": "Registry Schema Coverage",
+      "source": "0002",
+      "features": {
+        "document_plus_registry_structure": {
+          "rating": "green",
+          "notes": "Load and save preserve both document and registry top-level keys."
+        },
+        "all_entry_fields_preserved": {
+          "rating": "green",
+          "notes": "id, title, purpose, location, tags, type, description, invoke — all preserved. Forms only write the fields they explicitly manage."
+        },
+        "type_logical_routing": {
+          "rating": "green",
+          "notes": "selector.py routes on type.logical.base and type.logical.format."
+        },
+        "type_semantic_field": {
+          "rating": "yellow",
+          "notes": "Preserved in entries but not surfaced or editable in any form editor. Falls through to raw editor if user wants to set it."
+        },
+        "location_system": {
+          "rating": "yellow",
+          "notes": "path and url location descriptors handled by form editors. inline triggers raw-editor fallback. Exotic descriptors (telnet, ssh) preserved but not handled."
+        },
+        "positional_and_uuid_ids": {
+          "rating": "green",
+          "notes": "No restrictions — any string id is accepted. Convention is not enforced."
+        },
+        "invoke_field": {
+          "rating": "yellow",
+          "notes": "Preserved (unknown fields pass through). Not exposed in any editor."
+        }
+      }
+    }
+  },
+
+  "summary": {
+    "green_count": 23,
+    "yellow_count": 24,
+    "red_count": 7,
+    "overall_assessment": "The structural foundation is solid. The core engine, dispatch system, registry I/O, two-pane UI, entry index, and entry management (add/delete) all work. Form editors are built and wired but need real-world testing and polish. The main gaps are: the script system has no UI trigger, patchboard is entirely stubbed out, and a handful of keyboard shortcuts and visual polish items are missing.",
+    "recommended_next_priorities": [
+      "Test and harden the form editors (Apply button round-trips, path resolution on Windows)",
+      "Test Save — especially when REG_PATH is set vs when it needs to be created",
+      "Add keyboard accelerators for Add File/Folder/URL (e.g. Ctrl+Shift+F/D/U)",
+      "Script runner UI: a simple 'Run Script...' menu item with a file picker",
+      "Status bar and dirty flag visual verification",
+      "Patchboard: emit selected-item at minimum"
+    ]
+  }
+}

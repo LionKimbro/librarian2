@@ -15,6 +15,7 @@ SELECT_ENTRY     = 'select_entry'
 UPDATE_ENTRY     = 'update_entry'
 ADD_ENTRY        = 'add_entry'
 DELETE_ENTRY     = 'delete_entry'
+RENAME_ENTRY     = 'rename_entry'
 RUN_SCRIPT       = 'run_script'
 SET_EDITOR_MODE  = 'set_editor_mode'
 SET_STATUS       = 'set_status'
@@ -53,6 +54,7 @@ def _setup():
     _register(ADD_ENTRY,        entry_r.handle_add_entry)
     _register(DELETE_ENTRY,     entry_r.handle_delete_entry)
     _register(UPDATE_ENTRY,     entry_r.handle_update_entry)
+    _register(RENAME_ENTRY,     entry_r.handle_rename_entry)
     _register(SELECT_ENTRY,     entry_r.handle_select_entry)
     _register(RUN_SCRIPT,       script_r.handle_run_script)
     _register(SET_EDITOR_MODE,  ui_r.handle_set_editor_mode)

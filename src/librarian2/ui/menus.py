@@ -71,8 +71,10 @@ def _build_view_menu(menubar):
     menubar.add_cascade(label='View', menu=m, underline=0)
 
     m.add_command(label='Form Editor',     underline=0,
+                  accelerator='Ctrl+J',
                   command=lambda: _set_editor_mode('form'))
     m.add_command(label='Raw JSON Editor', underline=0,
+                  accelerator='Ctrl+J',
                   command=lambda: _set_editor_mode('raw'))
     return m
 

@@ -106,9 +106,17 @@ def build_file_editor(parent, entry, widgets):
 # --- Helpers ---
 
 def _apply(entry, path_var, widgets):
-    apply_common_fields(entry, widgets)
+    original_id = entry['id']
+    new_id, tags_error = apply_common_fields(entry, widgets)
+    if tags_error:
+        d.dispatch(d.SET_STATUS, {'msg': tags_error, 'level': 'red'})
+        return
     _set_path(entry, path_var.get())
-    d.dispatch(d.UPDATE_ENTRY, entry)
+    if new_id != original_id:
+        d.dispatch(d.RENAME_ENTRY, {'old_id': original_id, 'new_id': new_id, 'entry': entry})
+    else:
+        entry['id'] = new_id
+        d.dispatch(d.UPDATE_ENTRY, entry)
     from librarian2.ui.main_window import refresh_all
     refresh_all(st.g)
 
