@@ -369,7 +369,9 @@ def cmd_write_to_document():
         d.dispatch(d.SET_STATUS, {'msg': 'File root is not a JSON object', 'level': 'red'})
         return
 
-    doc_obj  = {'document-id': entry['id']} if 'id' in entry else {}
+    doc_obj  = dict(data.get('document') or {})
+    if 'id' in entry:
+        doc_obj['document-id'] = entry['id']
     doc_obj.update({f: entry[f] for f in _DOC_FIELDS if f in entry})
     new_data = {'document': doc_obj}
     for k, v in data.items():
