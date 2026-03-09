@@ -1,0 +1,268 @@
+{
+  "document": {
+    "document-id": "librarian2.registry-editor.type-system-details.v1",
+    "title": "Librarian2 Type System — Detailed Specification",
+    "purpose": "Define how the type system works in Librarian2 registries and how it is represented and edited in the Librarian2 Registry Editor.",
+    "status": "working-spec",
+    "author": "Lion + ChatGPT",
+    "date": "2026-03-08",
+    "chatgpt": "https://chatgpt.com/c/69ad50ea-cb24-8329-a782-12b0e534ad8e"
+  },
+  "overview": {
+    "description": "The Librarian2 type system provides structured metadata describing the nature of a resource. The type system has two axes: logical type (what the resource physically is) and semantic type (what role the resource plays). The type field is optional, and entries may omit either logical or semantic components.",
+    "design_principles": [
+      "Types assist discovery and tooling but do not constrain registry flexibility.",
+      "The editor must never destroy or replace unknown metadata.",
+      "Logical types primarily determine which form editor can safely edit a resource.",
+      "Semantic types provide discovery hints for humans and LLMs.",
+      "The system follows the 80/20 principle: support the common cases well while falling back to raw JSON editing for uncommon cases."
+    ]
+  },
+  "type_model": {
+    "description": "The type field contains logical and semantic subfields describing different axes of meaning.",
+    "structure": {
+      "type": {
+        "logical": {},
+        "semantic": {}
+      }
+    },
+    "notes": [
+      "The entire type field is optional.",
+      "Logical and semantic components are independently optional.",
+      "Tools must tolerate missing or partial type definitions.",
+      "If no logical.base is present, the editor defaults to Raw Record Editor."
+    ]
+  },
+  "logical_type_definition": {
+    "description": "Logical types describe the physical nature of the resource.",
+    "fields": {
+      "base": {
+        "type": "string",
+        "description": "Primary classification of the resource.",
+        "allowed_values": [
+          "file",
+          "folder",
+          "url",
+          "program"
+        ]
+      },
+      "format": {
+        "type": "string",
+        "description": "Optional format identifier describing the file format."
+      },
+      "encoding": {
+        "type": "string",
+        "description": "Optional text encoding identifier. Used only for file resources."
+      }
+    },
+    "rules": [
+      "encoding only applies to logical.base=file.",
+      "format primarily applies to files.",
+      "JSON files typically use encoding utf-8 but the system does not enforce this.",
+      "Logical type primarily determines which editor form will be used."
+    ]
+  },
+  "semantic_type_definition": {
+    "description": "Semantic types describe the role or meaning of the resource.",
+    "fields": {
+      "base": {
+        "type": "string",
+        "description": "Primary semantic classification of the resource."
+      }
+    },
+    "notes": [
+      "Semantic types are optional.",
+      "Semantic types are intentionally small and descriptive.",
+      "Context such as project membership should normally be expressed using tags rather than semantic type."
+    ]
+  },
+  "ui_representation": {
+    "description": "Type fields are edited using ttk.Combobox widgets in form editors.",
+    "combobox_behavior": {
+      "editable": true,
+      "description": "All comboboxes are editable. Users may type values not present in the predefined lists.",
+      "not_used_value": "<NOT-USED>",
+      "behavior_rules": [
+        "Selecting <NOT-USED> removes the corresponding key from the record.",
+        "Existing values found in the record should automatically be added to the combobox suggestion list.",
+        "New values entered by the user (found in other records) should also be added to the suggestion list during the editing session."
+      ]
+    }
+  },
+  "editor_specific_vocabularies": {
+    "file_editor": {
+      "logical_base_options": [
+        "<NOT-USED>",
+        "file",
+        "folder",
+        "url",
+        "program"
+      ],
+      "format_options": [
+        "<NOT-USED>",
+        "json",
+        "txt",
+        "lsf",
+        "pdf"
+      ],
+      "encoding_options": [
+        "<NOT-USED>",
+        "utf-8",
+        "binary"
+      ],
+      "semantic_base_options": [
+        "<NOT-USED>",
+        "reference",
+        "spec",
+        "notes",
+        "schema",
+        "dataset"
+      ]
+    },
+    "folder_editor": {
+      "semantic_base_options": [
+        "<NOT-USED>",
+        "reference",
+        "dataset",
+        "notes"
+      ]
+    },
+    "url_editor": {
+      "semantic_base_options": [
+        "<NOT-USED>",
+        "reference",
+        "spec",
+        "dataset"
+      ]
+    },
+    "program_editor": {
+      "status": "reserved",
+      "semantic_base_options": [
+        "<NOT-USED>",
+        "tool",
+        "patchboard-component",
+        "service",
+        "script"
+      ]
+    }
+  },
+  "json_document_header_tools": {
+    "description": "When the selected resource is a JSON file, the editor enables menu commands for synchronizing registry metadata with a JSON document header.",
+    "menu_location": "Entry menu (Immediately after the \"Add File/Folder/URL/Program\" section, and before the Raise/Lower Entry section.)",
+    "availability_rule": "Commands are enabled only when the selected entry has logical.base='file' and logical.format='json'.",
+    "commands": [
+      {
+        "name": "read-from-document-key",
+        "menu_label": "Read from \"document\" key",
+        "behavior": [
+          "Open the referenced JSON file.",
+          "Parse the JSON document.",
+          "Verify that the root value is a dictionary.",
+          "If the dictionary contains a 'document' key whose value is a dictionary, read metadata fields from it.",
+          "Recognized fields include: id, title, tags, type, description, purpose.",
+          "Copy any recognized values into the current registry entry if present.",
+          "Fields not present in the JSON document are left unchanged.",
+          "Rember that if 'id' changes, updating is necessary."
+        ]
+      },
+      {
+        "name": "write-to-document-key",
+        "menu_label": "Write to \"document\" key",
+        "behavior": [
+          "Open the referenced JSON file.",
+          "Parse the JSON document.",
+          "Verify that the root value is a dictionary.",
+          "Construct or update a 'document' object using the registry entry metadata.",
+          "Recognized fields written include: id, title, tags, type, description, purpose.",
+          "Insert or update the 'document' key in the root dictionary."
+        ],
+        "ordering_requirement": [
+          "When writing the 'document' key, it must be placed as the first key in the root JSON dictionary.",
+          "If a 'document' key already exists elsewhere in the dictionary, it should be moved to the first position.",
+          "Other keys must preserve their existing relative order."
+        ]
+      }
+    ],
+    "notes": [
+      "These commands synchronize metadata between the registry record and the JSON file itself.",
+      "The JSON document is the authoritative source for document metadata. The registry entry acts as an index and may mirror metadata from the document header for discovery and editing convenience. Synchronization tools allow metadata to be copied between the registry and the document, but the document itself remains the canonical artifact.",
+      "JSON files should normally be written using UTF-8 encoding.  It's not just a good idea, it's The Law (RFC 8259.)",
+      "Failure to parse the JSON document must not modify the file."
+    ]
+  },
+  "auto_detection": {
+    "description": "Some type information may be automatically inferred during ingestion.",
+    "rules": [
+      "When a user adds a file via the Add File command, logical.base is automatically set to file.",
+      "When a file extension is .json, logical.format may be set to json, and logical.encoding may be set to 'utf-8'.",
+      "Future enhancements may inspect JSON files to detect document structures."
+    ],
+    "future_enhancements": [
+      "Detect JSON files containing a top-level 'document' object.",
+      "Automatically classify structured documents as specs or schemas when appropriate."
+    ],
+    "document_header_detection": {
+      "description": "During ingestion of JSON files, the editor may attempt to detect structured document metadata.",
+      "detection_rules": [
+        "Parse the JSON file.",
+        "Check whether the root value is a dictionary (JSON object).",
+        "Check whether the dictionary contains a key named 'document'."
+      ],
+      "extraction_behavior": [
+        "If a 'document' object is present, the editor may read metadata fields from it.",
+        "Recognized fields include: id, title, tags, type, description, and purpose.",
+        "If present, these values may be copied into the registry entry fields of the same name.",
+        "Values extracted from the document header serve as defaults and may be edited later by the user."
+      ],
+      "notes": [
+        "The ingestion logic must not modify the source file.",
+        "If the JSON structure does not match expectations, ingestion should fall back to normal file handling.",
+        "Extraction should be best-effort and must never fail the ingestion process."
+      ]
+    }
+  },
+  "data_integrity_rules": {
+    "description": "Editors must preserve unknown fields.",
+    "rules": [
+      "Forms must never destroy or replace unknown metadata.",
+      "Editors may modify only the keys they explicitly manage.",
+      "Unrecognized keys must remain intact when saving records.",
+      "If the editor cannot safely handle a record, it must fall back to Raw Record Editor."
+    ]
+  },
+  "examples": {
+    "example_file_spec": {
+      "type": {
+        "logical": {
+          "base": "file",
+          "format": "json",
+          "encoding": "utf-8"
+        },
+        "semantic": {
+          "base": "spec"
+        }
+      }
+    },
+    "example_reference_doc": {
+      "type": {
+        "logical": {
+          "base": "file",
+          "format": "txt"
+        },
+        "semantic": {
+          "base": "reference"
+        }
+      }
+    },
+    "example_dataset": {
+      "type": {
+        "logical": {
+          "base": "folder"
+        },
+        "semantic": {
+          "base": "dataset"
+        }
+      }
+    }
+  }
+}
