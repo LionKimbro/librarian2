@@ -101,6 +101,7 @@ def build_file_editor(parent, entry, widgets):
 
     widgets['file_path_var']   = path_var
     widgets['file_path_entry'] = path_entry
+    widgets['apply_fn']        = lambda: _apply(entry, path_var, widgets)
 
 
 # --- Helpers ---

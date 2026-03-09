@@ -77,3 +77,4 @@ def build_raw_editor(parent, entry, widgets):
 
     widgets['raw_editor_frame'] = frame
     widgets['raw_editor_text']  = text
+    widgets['apply_fn']         = apply_changes

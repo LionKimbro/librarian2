@@ -52,10 +52,21 @@ def _build_entry_menu(menubar):
     m = tk.Menu(menubar, tearoff=False)
     menubar.add_cascade(label='Entry', menu=m, underline=0)
 
+    m.add_command(label='Apply',         underline=0,
+                  accelerator='Ctrl+Enter',
+                  command=cmd_apply)
+    m.add_separator()
     m.add_command(label='Add File...',    underline=4, command=lambda: cmd_add_entry('file'))
     m.add_command(label='Add Folder...', underline=4, command=lambda: cmd_add_entry('folder'))
     m.add_command(label='Add URL...',    underline=4, command=lambda: cmd_add_entry('url'))
     m.add_command(label='Add Program...', underline=4, command=lambda: cmd_add_entry('program'))
+    m.add_separator()
+    m.add_command(label='Raise Entry',   underline=0,
+                  accelerator='Ctrl+Up',
+                  command=cmd_raise_entry)
+    m.add_command(label='Lower Entry',   underline=0,
+                  accelerator='Ctrl+Down',
+                  command=cmd_lower_entry)
     m.add_separator()
     m.add_command(label='Delete Entry',  underline=0,
                   accelerator='Delete',
@@ -80,6 +91,13 @@ def _build_view_menu(menubar):
 
 
 # --- Command implementations ---
+
+def cmd_apply():
+    """Invoke the active editor's apply function, if one is mounted."""
+    fn = st.g[st.WIDGETS].get('apply_fn')
+    if fn:
+        fn()
+
 
 def cmd_open_registry():
     """Prompt for a registry file and load it."""
@@ -192,6 +210,24 @@ def _build_program_entry(path):
         'type':     {'logical': {'base': 'program'}},
     }
     return entry
+
+
+def cmd_raise_entry():
+    """Move the selected entry one position earlier in the index."""
+    entry_id = st.g[st.SELECTED_ID]
+    if entry_id is None:
+        return
+    d.dispatch(d.RAISE_ENTRY, entry_id)
+    _refresh_all()
+
+
+def cmd_lower_entry():
+    """Move the selected entry one position later in the index."""
+    entry_id = st.g[st.SELECTED_ID]
+    if entry_id is None:
+        return
+    d.dispatch(d.LOWER_ENTRY, entry_id)
+    _refresh_all()
 
 
 def cmd_delete_selected():

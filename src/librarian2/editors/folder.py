@@ -87,6 +87,7 @@ def build_folder_editor(parent, entry, widgets):
 
     widgets['folder_path_var']   = path_var
     widgets['folder_path_entry'] = path_entry
+    widgets['apply_fn']          = lambda: _apply(entry, path_var, widgets)
 
 
 def _apply(entry, path_var, widgets):

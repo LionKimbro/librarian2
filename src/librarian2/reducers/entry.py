@@ -70,6 +70,39 @@ def handle_rename_entry(payload):
     st.g[st.STATUS_LEVEL] = 'green'
 
 
+def handle_raise_entry(payload):
+    """Move the selected entry one position earlier in insertion order.
+
+    payload: str — entry id to raise (ignored if already first)
+    """
+    _shift_entry(payload, -1)
+
+
+def handle_lower_entry(payload):
+    """Move the selected entry one position later in insertion order.
+
+    payload: str — entry id to lower (ignored if already last)
+    """
+    _shift_entry(payload, +1)
+
+
+def _shift_entry(entry_id, delta):
+    entries = st.g[st.REG_ENTRIES]
+    keys    = list(entries.keys())
+    try:
+        idx = keys.index(entry_id)
+    except ValueError:
+        return
+    new_idx = idx + delta
+    if new_idx < 0 or new_idx >= len(keys):
+        return
+    keys[idx], keys[new_idx] = keys[new_idx], keys[idx]
+    st.g[st.REG_ENTRIES] = {k: entries[k] for k in keys}
+    st.g[st.DIRTY]        = True
+    st.g[st.STATUS_MSG]   = ''
+    st.g[st.STATUS_LEVEL] = 'default'
+
+
 def handle_delete_entry(payload):
     """Delete an entry by ID.
 

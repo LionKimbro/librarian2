@@ -53,13 +53,14 @@ def refresh_index(g):
     tree.unbind('<<TreeviewSelect>>')
     tree.delete(*tree.get_children())
 
-    for entry_id in sorted(entries.keys()):
+    for entry_id in entries.keys():
         icon  = _icon_for_entry(entries[entry_id])
         label = f'{icon}  {entry_id}'
         tree.insert('', 'end', iid=entry_id, text=label)
 
     if selected and selected in entries:
         tree.selection_set(selected)
+        tree.focus(selected)
         tree.see(selected)
 
     tree.bind('<<TreeviewSelect>>', lambda e: _on_tree_select(tree))
@@ -74,6 +75,8 @@ def _on_tree_select(tree):
     """
     selection = tree.selection()
     entry_id  = selection[0] if selection else None
+    if entry_id == st.g[st.SELECTED_ID]:
+        return   # stale event queued by selection_set in refresh_index; nothing changed
     d.dispatch(d.SELECT_ENTRY, entry_id)
 
     from librarian2.ui.editor_pane import refresh_editor

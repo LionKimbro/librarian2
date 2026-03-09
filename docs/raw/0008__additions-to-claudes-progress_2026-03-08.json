@@ -39,9 +39,10 @@
     },
 
     "id_renaming": {
-      "rating": "red",
+      "rating": "green",
       "priority": "high",
       "summary": "The 'id' field in every form editor is currently editable as a text box, but editing it and pressing Apply does not reindex the entry — the old id key remains in the registry dict and the new one is not created. ID renaming must be treated as a special operation: reindex under the new key and remove the old one.",
+      "implemented": "RENAME_ENTRY action added to dispatch.py. handle_rename_entry in reducers/entry.py does collision check, reindexes, updates SELECTED_ID, sets green status 'Renamed: old → new'. apply_common_fields() now returns (new_id, tags_error). Each editor's _apply captures original_id before calling it and dispatches RENAME_ENTRY when the id has changed.",
       "current_behavior": "handle_update_entry does existing.update(payload), which updates the 'id' field inside the entry dict but does not change the dict key in g[REG_ENTRIES]. The entry is still stored and referenced under the old id.",
       "desired_behavior": {
         "collision_check": "Before applying, check whether the new id already exists in g[REG_ENTRIES] (excluding the current entry). If it collides, show a red status message and do not apply.",

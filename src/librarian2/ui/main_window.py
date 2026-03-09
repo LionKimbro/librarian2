@@ -82,11 +82,14 @@ def build_main_window(root):
 
 def bind_keys(root):
     """Bind global keyboard shortcuts to the root window."""
-    from librarian2.ui.menus import cmd_open_registry
-    root.bind('<Control-o>', lambda e: cmd_open_registry())
-    root.bind('<Control-s>', lambda e: _save())
-    root.bind('<Control-q>', lambda e: root.destroy())
-    root.bind('<Control-j>', lambda e: _toggle_editor_mode())
+    from librarian2.ui.menus import cmd_open_registry, cmd_raise_entry, cmd_lower_entry
+    root.bind('<Control-o>',    lambda e: cmd_open_registry())
+    root.bind('<Control-s>',    lambda e: _save())
+    root.bind('<Control-q>',    lambda e: root.destroy())
+    root.bind('<Control-j>',    lambda e: _toggle_editor_mode())
+    root.bind('<Control-Return>', lambda e: _cmd_apply())
+    root.bind('<Control-Up>',   lambda e: cmd_raise_entry())
+    root.bind('<Control-Down>', lambda e: cmd_lower_entry())
 
 
 def _toggle_editor_mode():
@@ -95,14 +98,50 @@ def _toggle_editor_mode():
     _set_editor_mode(new_mode)
 
 
+def _cmd_apply():
+    from librarian2.ui.menus import cmd_apply
+    cmd_apply()
+
+
 def refresh_all(g):
     """Refresh all UI components from current application state.
 
-    Call this after any dispatch() that should be reflected in the UI.
+    Preserves keyboard focus across the rebuild: finds which widgets-dict
+    key held focus before, then restores focus to the same key after.
     """
+    focused_key = _focused_widget_key(g)
+
     refresh_index(g)
     refresh_editor(g)
     refresh_status_bar(g)
+
+    _restore_focus(g, focused_key)
+
+
+def _focused_widget_key(g):
+    """Return the widgets-dict key of the currently focused widget, or None."""
+    focused = g[st.TK].focus_get()
+    if focused is None:
+        return None
+    for key, w in g[st.WIDGETS].items():
+        if callable(w):
+            continue
+        if w is focused:
+            return key
+    return None
+
+
+def _restore_focus(g, key):
+    """Focus the widget stored under key in the widgets dict, if it still exists."""
+    if not key:
+        return
+    w = g[st.WIDGETS].get(key)
+    if w is None or callable(w):
+        return
+    try:
+        w.focus_set()
+    except Exception:
+        pass
 
 
 def _save():

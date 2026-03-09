@@ -106,6 +106,7 @@ def build_json_file_editor(parent, entry, widgets):
 
     widgets['json_file_path_var']   = path_var
     widgets['json_file_path_entry'] = path_entry
+    widgets['apply_fn']             = lambda: _apply(entry, path_var, widgets)
 
 
 def _apply(entry, path_var, widgets):

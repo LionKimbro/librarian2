@@ -73,6 +73,7 @@ def build_url_editor(parent, entry, widgets):
 
     widgets['url_var']   = url_var
     widgets['url_entry'] = url_entry
+    widgets['apply_fn']  = lambda: _apply(entry, url_var, widgets)
 
 
 def _apply(entry, url_var, widgets):
