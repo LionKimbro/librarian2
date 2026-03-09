@@ -97,6 +97,7 @@ def bind_keys(root):
     root.bind('<Control-Return>', lambda e: _cmd_apply())
     root.bind('<Control-Up>',   lambda e: cmd_raise_entry())
     root.bind('<Control-Down>', lambda e: cmd_lower_entry())
+    root.bind('<Control-e>',    lambda e: d.dispatch(d.PATCHBOARD_EMIT))
 
 
 def _toggle_editor_mode():

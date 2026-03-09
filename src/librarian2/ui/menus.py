@@ -73,6 +73,7 @@ def _build_entry_menu(menubar):
                   command=cmd_delete_selected)
     m.add_separator()
     m.add_command(label='Emit to Patchboard', underline=0,
+                  accelerator='Ctrl+E',
                   command=lambda: d.dispatch(d.PATCHBOARD_EMIT))
     return m
 
